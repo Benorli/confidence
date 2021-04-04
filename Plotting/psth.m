@@ -70,8 +70,6 @@ spikeTimesFromEvent = compareSpikes2Events(spikeTimes, eventTimes,...
     'BinSize', sbin,...
     'Hz', Hz);
 
-%testcell{1} = binnedSpikes;
-
 g2(1,1) = gramm('x', spikeTimesFromEvent);
 g2(1,2) = gramm('x', binCentres', 'y', binnedSpikes');
 
