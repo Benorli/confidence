@@ -1,4 +1,4 @@
-function [g2] = psth(varargin)
+function [g] = psth(varargin)
 % PSTH Return data for a persitimuls time histogram, with a plot option.
 %   [psth_data] = psth(spikeTimes, eventTimes) takes a vector of spike times
 %       (s) and event times (s), and returns a vector of spike frequencies
@@ -70,17 +70,17 @@ spikeTimesFromEvent = compareSpikes2Events(spikeTimes, eventTimes,...
     'BinSize', sbin,...
     'Hz', Hz);
 
-g2(1,1) = gramm('x', spikeTimesFromEvent);
-g2(1,2) = gramm('x', binCentres', 'y', binnedSpikes');
+g(1,1) = gramm('x', spikeTimesFromEvent);
+g(1,2) = gramm('x', binCentres', 'y', binnedSpikes');
 
-g2(1,1).stat_bin('geom','stairs','fill','transparent');
-g2(1,1).set_title('''transparent''');
+g(1,1).stat_bin('geom','stairs','fill','transparent');
+g(1,1).set_title('''transparent''');
 
-g2(1,2).stat_summary();
-g2(1,2).set_title('stat_summary()');
+g(1,2).stat_summary();
+g(1,2).set_title('stat_summary()');
 
-g2.set_title('psth');
-g2.draw();
+g.set_title('psth');
+g.draw();
 
 end
 
