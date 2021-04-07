@@ -1,4 +1,4 @@
-function [binnedSpikes, bin, eventIdx, binWidth, binEdges] = binSpikesPerEvent(varargin)
+function [binnedSpikes, binCenters, binEdges] = binSpikesPerEvent(varargin)
 % BINSPIKEPEREVENT Takes a time window, surrounding each event and
 % returns binned spike frequencies (Hz) or counts within the window
 % relative to the respective event. Works well with gramm stat_summary.
@@ -8,21 +8,22 @@ function [binnedSpikes, bin, eventIdx, binWidth, binEdges] = binSpikesPerEvent(v
 %       takes a window of time before and after the event. Each spike which
 %       falls within that window is binned relative to that event and
 %       Output as binnedSpikes as a frequency (Hz) or counts if specified.
-%       Optionally returns the centre of each bin per bin (bin), the event
-%       index of each bin (eventIdx), the width of the bin (binWidth) which
-%       can be used to convert to Hz later, and the bin edges used to
-%       define binning (binEdges).
+%       Optionally returns the centre of each bin per bin (bin), the width 
+%       of the bin (binWidth) which can be used to convert to Hz later, 
+%       and the bin edges used to define binning (binEdges).
 %
 %   Note: If trial has no spikes eventIdx == 0
 %
 %   Name Value Arguments
 %   Previous         = The amount of time (ms) before the event to include.
 %   Post             = The amount of time (ms) after the event to include.
-%   BinSize          = The bin size in ms.
+%   BinSize          = The width of each bin in ms (default 100 ms).
 %   Hz               = A binary logical or numeric, if 1/true counts are 
 %                      converted to Hz. Default is true.
 %   WrapOutputInCell = Wrap each output into a cell, particularly useful
 %                      for running with splitapply, to bin in groups.
+%
+% TODO: check comments make sense since change
 
 %% Parse variable input arguments
 
@@ -70,52 +71,36 @@ clear p
 
 binEdges = (-prev : binWidth : post)';
 binCenters = movmean(binEdges, 2, 'Endpoints', 'discard');
-nbin = length(binCenters);
 
 occurringEvents = find(~isnan(eventTimes))';
 assert(~isempty(occurringEvents), ['No events occured, eventTimes ',...
     'contained only NaNs'])
-nEventsOccured = length(occurringEvents);
 
-eventIdx = zeros(nEventsOccured * nbin, 1);
-binnedSpikes = zeros(nEventsOccured * nbin, 1);
+binnedSpikes = cell(length(eventTimes), 1);
+binnedSpikes(:) = {zeros(length(binCenters), 1)};
 
-for i = 1:nEventsOccured
+for i = occurringEvents
     
     tempSpikes = spikeTimes;
-    tempSpikes = tempSpikes - eventTimes(occurringEvents(i));
+    tempSpikes = tempSpikes - eventTimes(i);
     spikeTimesFromEvent = tempSpikes(tempSpikes >= -prev &...
         tempSpikes <= post);
-    if ~isempty(spikeTimesFromEvent) && i==1
-        binnedSpikes(1:nbin) = histcounts(...
-            spikeTimesFromEvent, binEdges);
-        eventIdx(1:nbin) = repmat(...
-            occurringEvents(i), nbin, 1);
-    elseif ~isempty(spikeTimesFromEvent)
-        binnedSpikes((i - 1) * nbin + 1: i * nbin) = histcounts(...
-            spikeTimesFromEvent, binEdges);
-        eventIdx((i - 1) * nbin + 1: i * nbin) = repmat(...
-            occurringEvents(i), nbin, 1);
-    end
-    
+    binnedSpikes(i) = {histcounts(spikeTimesFromEvent, binEdges)'};
+       
 end
 
-assert(sum(binnedSpikes) ~= 0, ['No spikes found in any trials. '....
+assert(sum(cell2mat(binnedSpikes)) ~= 0, ['No spikes found in any trials. '....
     'Please check 1) spike times vector is not empty, 2) You remembered'...
-    ' to add the trial start time stamp to the event_times 3) The'...
+    ' to add the trial start time to the eventTimes 3) The'...
     ' synchronisation was effective 4) The time window is large enough']);
 
 if Hz
-    binnedSpikes = binnedSpikes * 1000 / binWidth;
+    binnedSpikes = cellfun(@(x) x * 1000 / binWidth, binnedSpikes,...
+        'UniformOutput', false);
 end
-
-bin = repmat(binCenters, nEventsOccured, 1);
 
 if cellWrap == true
     binnedSpikes = {binnedSpikes};
-    bin          = {bin};
-    eventIdx     = {eventIdx};
-    binWidth     = {binWidth};
     binEdges     = {binEdges};
 end
     
