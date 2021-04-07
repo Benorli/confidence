@@ -16,21 +16,24 @@ function [binnedSpikes, bin, eventIdx, binWidth, binEdges] = binSpikesPerEvent(v
 %   Note: If trial has no spikes eventIdx == 0
 %
 %   Name Value Arguments
-%   Previous = The amount of time (ms) before the event to include.
-%   Post     = The amount of time (ms) after the event to include.
-%   BinSize  = The bin size in ms.
-%   Hz       = A binary logical or numeric, if 1/true counts are converted
-%              to Hz. Default is true.
+%   Previous         = The amount of time (ms) before the event to include.
+%   Post             = The amount of time (ms) after the event to include.
+%   BinSize          = The bin size in ms.
+%   Hz               = A binary logical or numeric, if 1/true counts are 
+%                      converted to Hz. Default is true.
+%   WrapOutputInCell = Wrap each output into a cell, particularly useful
+%                      for running with splitapply, to bin in groups.
 
 %% Parse variable input arguments
 
 p = inputParser; % Create object of class 'inputParser'
 
 % define defaults
-defprev    = 2500; % in ms
-defpost    = 2500; % in ms
-defbinsize = 100;  % in ms
-defHz      = true;
+defprev     = 2500; % in ms
+defpost     = 2500; % in ms
+defbinsize  = 100;  % in ms
+defHz       = true;
+defcellWrap = false;
 
 % validation functions
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -48,12 +51,14 @@ addParameter(p, 'BinSize', defbinsize, valIntScalarNonEmpty);
 addParameter(p, 'Previous', defprev, valPosScalarNonEmpty);
 addParameter(p, 'Post', defpost, valPosScalarNonEmpty);
 addParameter(p, 'Hz', defHz, valBinary);
+addParameter(p, 'WrapOutputInCell', defcellWrap, valBinary);
 
 parse(p, varargin{:});
 
 % unpack parser and convert units
 spikeTimes = p.Results.spikeTimes * 1000; % convert to ms
 eventTimes = p.Results.eventTimes * 1000; % convert to ms
+cellWrap   = p.Results.WrapOutputInCell;
 binWidth   = p.Results.BinSize;
 prev       = p.Results.Previous;
 post       = p.Results.Post;
@@ -105,5 +110,14 @@ if Hz
 end
 
 bin = repmat(binCenters, nEventsOccured, 1);
+
+if cellWrap == true
+    binnedSpikes = {binnedSpikes};
+    bin          = {bin};
+    eventIdx     = {eventIdx};
+    binWidth     = {binWidth};
+    binEdges     = {binEdges};
+end
+    
 
 end

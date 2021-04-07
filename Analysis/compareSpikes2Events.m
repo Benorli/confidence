@@ -12,8 +12,10 @@ function [spikeTimesFromEvent, eventIdx] = compareSpikes2Events(varargin)
 %   Note: TRIALS WITHOUT SPIKES WILL NOT SHOW UP
 %
 %   Name Value Arguments
-%   Previous     = The amount of time (ms) before the event to include.
-%   Post         = The amount of time (ms) after the event to include.
+%   Previous         = The amount of time (ms) before the event to include.
+%   Post             = The amount of time (ms) after the event to include.
+%   WrapOutputInCell = Wrap each output into a cell, particularly useful
+%                      for running with splitapply, to bin in groups.
 
 %% Parse variable input arguments
 
@@ -22,25 +24,30 @@ p = inputParser; % Create object of class 'inputParser'
 % define defaults
 prev = 2500; % in ms
 post = 2500; % in ms
+defcellWrap = false;
 
 % validation functions
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
     {'nonempty', 'column'});
 valNumScalarNonEmpty = @(x) validateattributes(x, {'numeric'},...
     {'nonempty', 'scalar'});
+valBinary = @(x) validateattributes(x, {'numeric', 'logical'},...
+    {'nonempty', 'scalar', 'binary'});
 
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNumColNonEmpty);
 addParameter(p, 'Previous', prev, valNumScalarNonEmpty);
 addParameter(p, 'Post', post, valNumScalarNonEmpty);
+addParameter(p, 'WrapOutputInCell', defcellWrap, valBinary);
 
 parse(p, varargin{:});
 
 % unpack parser and convert units
 spikeTimes = p.Results.spikeTimes * 1000; % convert to ms
 eventTimes = p.Results.eventTimes * 1000; % convert to ms
-prev = p.Results.Previous;
-post = p.Results.Post;
+cellWrap   = p.Results.WrapOutputInCell;
+prev       = p.Results.Previous;
+post       = p.Results.Post;
 
 clear p
 
@@ -72,5 +79,11 @@ assert(~isempty(spikeTimesFromEvent), ['No spikes found in any trials. '....
 
 spikeTimesFromEvent = cell2mat(spikeTimesFromEvent);
 eventIdx = cell2mat(eventIdx);
+
+if cellWrap == true
+    spikeTimesFromEvent = {spikeTimesFromEvent};
+    eventIdx            = {eventIdx};
+end
+    
 
 end
