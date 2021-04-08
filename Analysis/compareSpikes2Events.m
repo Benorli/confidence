@@ -1,4 +1,4 @@
-function [spikeTimesFromEvent, eventIdx] = compareSpikes2Events(varargin)
+function [spikeTimesFromEvent] = compareSpikes2Events(varargin)
 % COMPARESPIKES2EVENTS Takes a time window, surrounding each event and
 % returns each spike time within the window relative to the respective
 % event. Works well with histcounts and gramm stat_bin.
@@ -59,7 +59,6 @@ assert(~isempty(occurringEvents), ['No events occured, eventTimes ',...
 nEventsOccured = length(occurringEvents);
 
 spikeTimesFromEvent = cell(nEventsOccured, 1);
-eventIdx = cell(nEventsOccured, 1);
 
 for i = 1:nEventsOccured
     
@@ -67,8 +66,6 @@ for i = 1:nEventsOccured
     tempSpikes = tempSpikes - eventTimes(occurringEvents(i));
     spikeTimesFromEvent{i} = tempSpikes(tempSpikes >= -prev &...
         tempSpikes <= post);
-    eventIdx{i} = repmat(occurringEvents(i),...
-        length(spikeTimesFromEvent{i}), 1);
     
 end
 
@@ -77,12 +74,8 @@ assert(~isempty(spikeTimesFromEvent), ['No spikes found in any trials. '....
     ' to add the trial start time stamp to the event_times 3) The'...
     ' synchronisation was effective 4) The time window is large enough'])
 
-spikeTimesFromEvent = cell2mat(spikeTimesFromEvent);
-eventIdx = cell2mat(eventIdx);
-
 if cellWrap == true
     spikeTimesFromEvent = {spikeTimesFromEvent};
-    eventIdx            = {eventIdx};
 end
     
 
