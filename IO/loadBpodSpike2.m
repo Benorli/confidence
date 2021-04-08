@@ -9,8 +9,7 @@ function [SessionData, spikes, spike2TrialStart] = loadBpodSpike2(name)
 
 validateattributes(name, {'char'}, {})
 
-load(['C:\Users\Ben\Documents\_work_bnathanson\Summary_Analysis\',...
-    'Scripts\confidence\pathStruct'], 'pathStruct');
+load('pathStruct', 'pathStruct');
 
 startDirectory = cd;
 

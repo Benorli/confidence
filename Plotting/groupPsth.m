@@ -68,8 +68,7 @@ assert(length(eventTimes) == length(group), ['group must be the same length', ..
     'as eventTimes']);
 
 %% set path
-load(['C:\Users\Ben\Documents\_work_bnathanson\Summary_Analysis\',...
-    'Scripts\confidence\pathStruct'], 'pathStruct');
+load('pathStruct', 'pathStruct');
 addpath(pathStruct.gramm)
 
 %% return spike times relative to each event

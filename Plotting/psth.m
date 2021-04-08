@@ -54,8 +54,7 @@ Hz = p.Results.Hz;
 clear p
 
 %% set path
-load(['C:\Users\Ben\Documents\_work_bnathanson\Summary_Analysis\',...
-    'Scripts\confidence\pathStruct'], 'pathStruct');
+load('pathStruct', 'pathStruct');
 addpath(pathStruct.gramm)
 
 %% return spike times relative to each event
