@@ -26,6 +26,7 @@ prev  = 2500; % in ms
 post  = 2500; % in ms
 sbin  = 100;  % in ms
 defHz = true;
+deftitle = 'Visualising Spike Densities';
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -34,6 +35,7 @@ valNumScalarNonEmpty = @(x) validateattributes(x, {'numeric'},...
     {'nonempty', 'scalar'});
 valBinaryScalar = @(x) validateattributes(x, {'logical', 'numeric'},...
     {'nonempty', 'binary', 'scalar'});
+valText = @(x) validateattributes(x, {'char', 'string'}, {'nonempty'});
 
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNumColNonEmpty);
@@ -41,6 +43,7 @@ addParameter(p, 'Previous', prev, valNumScalarNonEmpty);
 addParameter(p, 'Post', post, valNumScalarNonEmpty);
 addParameter(p, 'BinSize', sbin, valNumScalarNonEmpty);
 addParameter(p, 'Hz', defHz, valBinaryScalar);
+addParameter(p, 'Title', deftitle, valText);
 
 parse(p, varargin{:});
 
@@ -50,6 +53,7 @@ prev = p.Results.Previous;
 post = p.Results.Post;
 sbin = p.Results.BinSize;
 Hz = p.Results.Hz;
+figTitle   = p.Results.Title;
 
 clear p
 
