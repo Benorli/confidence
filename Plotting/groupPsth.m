@@ -28,6 +28,7 @@ prev  = 2500; % in ms
 post  = 2500; % in ms
 sbin  = 100;  % in ms
 defHz = true;
+deftitle = 'Visualising Spike Densities';
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -39,6 +40,7 @@ valBinaryScalar = @(x) validateattributes(x, {'logical', 'numeric'},...
 % group must be a valid input for findgroups
 valGroup = @(x) validateattributes(x, {'numeric', 'categorical',...
     'calendarDuration', 'datetime', 'duration', 'logical', 'string'}, {});
+valText = @(x) validateattributes(x, {'char', 'string'}, {'nonempty'});
     
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNumColNonEmpty);
@@ -47,6 +49,7 @@ addParameter(p, 'Previous', prev, valNumScalarNonEmpty);
 addParameter(p, 'Post', post, valNumScalarNonEmpty);
 addParameter(p, 'BinSize', sbin, valNumScalarNonEmpty);
 addParameter(p, 'Hz', defHz, valBinaryScalar);
+addParameter(p, 'Title', deftitle, valText);
 
 parse(p, varargin{:});
 
@@ -57,6 +60,7 @@ prev       = p.Results.Previous;
 post       = p.Results.Post;
 sbin       = p.Results.BinSize;
 Hz         = p.Results.Hz;
+figTitle   = p.Results.Title;
 
 clear p
 
@@ -91,7 +95,7 @@ g(1,2) = gramm('x', spikeTimesFromEvent', 'color', group);
 g(1,2).geom_raster();
 g(1,2).set_title('geom_raster()');
 
-g.set_title('Visualising spike densities');
+g.set_title(figTitle);
 g.draw();
 
 end
