@@ -54,9 +54,10 @@ clear p
 occurringEvents = find(~isnan(eventTimes))';
 assert(~isempty(occurringEvents), ['No events occured, eventTimes ',...
     'contained only NaNs'])
+nEvents = length(eventTimes);
 nEventsOccured = length(occurringEvents);
 
-spikeTimesFromEvent = cell(nEventsOccured, 1);
+spikeTimesFromEvent = cell(nEvents, 1);
 
 for i = 1:nEventsOccured
     
