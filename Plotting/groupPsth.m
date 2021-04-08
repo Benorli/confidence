@@ -70,8 +70,11 @@ addpath(pathStruct.gramm)
 
 %% return spike times relative to each event
 
-%group = findgroups(group);
+group = categorical(group);
 
+spikeTimesFromEvent = compareSpikes2Events(spikeTimes, eventTimes,...
+    'Previous', prev,...
+    'Post', post);
 [binnedSpikes, binCenters] = binSpikesPerEvent(spikeTimes, eventTimes,...
     'Previous', prev,...
     'Post', post,...
@@ -84,9 +87,9 @@ g(1,1).stat_summary();
 g(1,1).set_title('stat_summary()');
 
 % TODO: convert compareSpikes2Events into cell format
-% g(1,2) = gramm('x', binnedSpikes', 'color', group);
-% g(1,2).geom_raster();
-% g(1,2).set_title('geom_raster()');
+g(1,2) = gramm('x', spikeTimesFromEvent', 'color', group);
+g(1,2).geom_raster();
+g(1,2).set_title('geom_raster()');
 
 g.set_title('Visualising spike densities');
 g.draw();
