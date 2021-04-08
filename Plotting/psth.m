@@ -63,26 +63,25 @@ addpath(pathStruct.gramm)
 
 %% return spike times relative to each event
 
-% This excludes trials without spikes by default, make as an option?
-spikeTimesFromEvent = compareSpikes2EventsVector(spikeTimes, eventTimes,...
+spikeTimesFromEvent = compareSpikes2Events(spikeTimes, eventTimes,...
     'Previous', prev,...
     'Post', post);
-[binnedSpikes, binCentres] = binSpikesPerEventVector(spikeTimes, eventTimes,...
+[binnedSpikes, binCenters] = binSpikesPerEvent(spikeTimes, eventTimes,...
     'Previous', prev,...
     'Post', post,...
     'BinSize', sbin,...
     'Hz', Hz);
 
-g(1,1) = gramm('x', spikeTimesFromEvent);
-g(1,2) = gramm('x', binCentres', 'y', binnedSpikes');
+g(1,1) = gramm('x', binCenters', 'y', binnedSpikes');
 
 g(1,1).stat_bin('geom','stairs','fill','transparent');
 g(1,1).set_title('''transparent''');
 
-g(1,2).stat_summary();
-g(1,2).set_title('stat_summary()');
+g(2,1) = gramm('x', spikeTimesFromEvent');
+g(2,1).geom_raster();
+g(2,1).set_title('geom_raster()');
 
-g.set_title('psth');
+g.set_title(figTitle);
 g.draw();
 
 end
