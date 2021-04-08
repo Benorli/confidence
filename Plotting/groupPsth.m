@@ -86,8 +86,9 @@ spikeTimesFromEvent = compareSpikes2Events(spikeTimes, eventTimes,...
 
 g(1,1) = gramm('x', binCenters', 'y', binnedSpikes', 'color', group);
 
-g(1,1).stat_summary();
+g(1,1).stat_summary('setylim', true);
 g(1,1).set_title('stat_summary()');
+g(1,1).axe_property('YLim', [0 inf]);
 
 g(1,2) = gramm('x', spikeTimesFromEvent', 'color', group);
 g(1,2).geom_raster();

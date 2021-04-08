@@ -74,8 +74,9 @@ spikeTimesFromEvent = compareSpikes2Events(spikeTimes, eventTimes,...
 
 g(1,1) = gramm('x', binCenters', 'y', binnedSpikes');
 
-g(1,1).stat_bin('geom','stairs','fill','transparent');
-g(1,1).set_title('''transparent''');
+g(1,1).stat_summary('setylim', true);
+g(1,1).set_title('stat_summary()');
+g(1,1).axe_property('YLim', [0 inf]);
 
 g(2,1) = gramm('x', spikeTimesFromEvent');
 g(2,1).geom_raster();
