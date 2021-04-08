@@ -9,8 +9,6 @@ function [spikeTimesFromEvent] = compareSpikes2Events(varargin)
 %       falls within that window is given a time relative to that event.
 %       Optionally returns the event index of each spike.
 %
-%   Note: TRIALS WITHOUT SPIKES WILL NOT SHOW UP
-%
 %   Name Value Arguments
 %   Previous         = The amount of time (ms) before the event to include.
 %   Post             = The amount of time (ms) after the event to include.

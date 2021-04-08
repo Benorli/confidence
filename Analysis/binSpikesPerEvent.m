@@ -1,18 +1,20 @@
 function [binnedSpikes, binCenters, binEdges] = binSpikesPerEvent(varargin)
 % BINSPIKEPEREVENT Takes a time window, surrounding each event and
-% returns binned spike frequencies (Hz) or counts within the window
-% relative to the respective event. Works well with gramm stat_summary.
+% returns a cell array, with a cell per trial. Each cell contains binned 
+% spike frequencies (Hz) or counts within the window relative to the
+% respective event. Works well with gramm stat_summary.
 %
 %   [spikeTimesFromEvent] = binSpikesPerEvent(spikeTimes, eventTimes)
 %       takes a vector of spike times (ms) and event times (ms). It then
 %       takes a window of time before and after the event. Each spike which
-%       falls within that window is binned relative to that event and
-%       Output as binnedSpikes as a frequency (Hz) or counts if specified.
+%       falls within that window is binned relative to that event and put
+%       in a cell as binnedSpikes as a frequency (Hz) or counts if 
+%       specified. The output is a column cell array with a cell per trial.
 %       Optionally returns the centre of each bin per bin (bin), the width 
 %       of the bin (binWidth) which can be used to convert to Hz later, 
 %       and the bin edges used to define binning (binEdges).
 %
-%   Note: If trial has no spikes eventIdx == 0
+%   NOTE: If trial has no spikes eventIdx == 0
 %
 %   Name Value Arguments
 %   Previous         = The amount of time (ms) before the event to include.
@@ -22,8 +24,6 @@ function [binnedSpikes, binCenters, binEdges] = binSpikesPerEvent(varargin)
 %                      converted to Hz. Default is true.
 %   WrapOutputInCell = Wrap each output into a cell, particularly useful
 %                      for running with splitapply, to bin in groups.
-%
-% TODO: check comments make sense since change
 
 %% Parse variable input arguments
 
