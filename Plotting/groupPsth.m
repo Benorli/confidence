@@ -90,7 +90,6 @@ g(1,1) = gramm('x', binCenters', 'y', binnedSpikes', 'color', group);
 g(1,1).stat_summary();
 g(1,1).set_title('stat_summary()');
 
-% TODO: convert compareSpikes2Events into cell format
 g(1,2) = gramm('x', spikeTimesFromEvent', 'color', group);
 g(1,2).geom_raster();
 g(1,2).set_title('geom_raster()');
