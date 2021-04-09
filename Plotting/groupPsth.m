@@ -1,6 +1,6 @@
 function [g] = groupPsth(varargin)
 % GROUPPSTH Return data for a persitimuls time histogram, with a plot option.
-%   [psth_data] = groupPsth(spikeTimes, eventTimes, group) takes a vector  
+%   [g] = groupPsth(spikeTimes, eventTimes, group) takes a vector  
 %       of spike times(s), event times (s), and group (an array with the 
 %       same length as event times, with each element defining the group 
 %       the event belongs to (for example, correct, error, or low/mid/high 
@@ -85,14 +85,13 @@ spikeTimesFromEvent = compareSpikes2Events(spikeTimes, eventTimes,...
     'Hz', Hz);
 
 g(1,1) = gramm('x', binCenters', 'y', binnedSpikes', 'color', group);
-
 g(1,1).stat_summary('setylim', true);
 g(1,1).set_title('stat_summary()');
 g(1,1).axe_property('YLim', [0 inf]);
 
-g(1,2) = gramm('x', spikeTimesFromEvent', 'color', group);
-g(1,2).geom_raster();
-g(1,2).set_title('geom_raster()');
+g(2,1) = gramm('x', spikeTimesFromEvent', 'color', group);
+g(2,1).geom_raster();
+g(2,1).set_title('geom_raster()');
 
 g.set_title(figTitle);
 g.draw();
