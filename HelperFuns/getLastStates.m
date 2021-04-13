@@ -33,7 +33,7 @@ function [lastState] = getLastState(SessionData, trial)
 %   a cell array giving the name of the last occuring state in trial. 
 
 validateattributes(SessionData, {'struct'}, {})
-validateattributes(trials, {'numeric'}, {'size', [1,1]})
+validateattributes(trial, {'numeric'}, {'size', [1,1]})
 
 [~, maxIdx] = max(structfun(@(x) max(x, [], 'all'),...
     SessionData.RawEvents.Trial{trial}.States));
