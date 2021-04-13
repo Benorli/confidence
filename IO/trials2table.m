@@ -18,8 +18,8 @@ function [T, varargout] = trials2table(varargin)
 %       cell array.
 
 % set defaults
-defaultDatafile = false;
-defaultConversionFile = false;
+defaultDatafile = [];
+defaultConversionFile = [];
 
 isFileLoc = @(x) ischar(x) || isstring(x) || iscellstr(x);
 validConversionArrayOrFile = @(x) isFileLoc(x) ||...
@@ -40,7 +40,7 @@ clear p
 start_directory = cd;
 
 % if no input, select files with gui
-if ~isstruct(dataFile) && dataFile == false
+if ~isstruct(dataFile) && isempty(dataFile)
     [filename, pathname] = uigetfile('*.mat',...
         'Choose Session to Analyse', 'multiselect', 'off');
     % stop if user cancels
@@ -60,7 +60,7 @@ else % if input is data struct
 end
 
 % if no input, select files with gui
-if ~iscell(conversionFile) && conversionFile == false
+if ~iscell(conversionFile) && isempty(conversionFile)
     [filename, pathname] = uigetfile('*.mat',...
         'Choose Conversion Cell Array', 'multiselect', 'off');
     % stop if user cancels
@@ -90,7 +90,7 @@ for i = 1: size(conversion, 1)
     newName = conversion{i, 1};
     oldName = conversion{i, 2};
     convFun = conversion{i, 3};
-    T.(newName) = convFun(data.(oldName));
+    T.(newName) = convFun(data.(oldName), data);
 end
 
 varargout{1} = conversion;
