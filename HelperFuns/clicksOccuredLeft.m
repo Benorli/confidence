@@ -23,3 +23,8 @@ for i = 1:length(fastClicks)
     end
     
 end
+
+
+leftClicks = leftClicks(:);
+
+end

@@ -23,3 +23,7 @@ for i = 1:length(fastClicks)
     end
     
 end
+
+rightClicks = rightClicks(:);
+
+end
