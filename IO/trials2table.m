@@ -40,7 +40,7 @@ clear p
 start_directory = cd;
 
 % if no input, select files with gui
-if ~dataFile
+if ~isstruct(dataFile) && dataFile == false
     [filename, pathname] = uigetfile('*.mat',...
         'Choose Session to Analyse', 'multiselect', 'off');
     % stop if user cancels
@@ -60,7 +60,7 @@ else % if input is data struct
 end
 
 % if no input, select files with gui
-if ~conversionFile
+if ~iscell(conversionFile) && conversionFile == false
     [filename, pathname] = uigetfile('*.mat',...
         'Choose Conversion Cell Array', 'multiselect', 'off');
     % stop if user cancels
