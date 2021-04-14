@@ -57,7 +57,7 @@ trialInfo.completedCatchTrial = T.completedCatchTrial(trialNum);
 trialInfo.rewardedTrial = T.rewardedTrial(trialNum);
 
 % Was the trial punished (punished = time out?)
-trialInfo.completedErrorBpod = T.completedErrorBpod(trialNum);
+trialInfo.completedErrorBpod = T.punishState(trialNum);
 
 % What type of completed catch trial was it?
 % Type 1 = CompletedCatchTrial & Correct Choice Given Clicks
