@@ -15,6 +15,7 @@ validateattributes(SessionData, {'struct'}, {})
 validateattributes(trials, {'numeric'}, {})
 
 lastStates = arrayfun(@(x) getLastState(SessionData, x), trials);
+lastStates = lastStates(:);
 
 end
 
