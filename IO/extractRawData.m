@@ -1,6 +1,6 @@
 function [T] = extractRawData(SessionData, T)
-% EXCTRACTRAWDATA extract times from the rawdata in sessiondata and add to
-% the trial table
+% EXCTRACTRAWDATA extract times from the rawdata in a SessionData struct 
+% output from Bpod and add to the trial table
 
 validateattributes(SessionData, {'struct'}, {})
 validateattributes(T, {'table'}, {})
