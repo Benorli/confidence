@@ -23,9 +23,9 @@ defaultConversionFile = [];
 
 isFileLoc = @(x) ischar(x) || isstring(x) || iscellstr(x);
 validConversionArrayOrFile = @(x) isFileLoc(x) ||...
-    iscell(x) && size(x, 2) == 3;
+    (iscell(x) && size(x, 2) == 3) || isempty(x) ;
 validStructOrFile = @(x) isFileLoc(x) ||...
-    isstruct(x);
+    isstruct(x) || isempty(x);
 
 p = inputParser;
 addParameter(p, 'dataFile', defaultDatafile, validStructOrFile);
