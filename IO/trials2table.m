@@ -85,6 +85,8 @@ clear conversionFile dataFile
 
 % move data into data table
 T = table((1:data.nTrials)', 'VariableNames', {'trialNumber'});
+T = addprop(T,{'nTrials'}, {'table'});
+T.Properties.CustomProperties.nTrials = data.nTrials;
 
 for i = 1: size(conversion, 1)
     newName = conversion{i, 1};
