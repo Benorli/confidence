@@ -1,76 +1,16 @@
 function [T] = trialOutcomes(T)
-
-% temporary function to convert bpod data table (from 2AFC task) to add
-% extra variables and useful data
+% Takes bpod data table that has been generated using trials2table
+% (from 2AFC task) and adds some extra variables and useful data
 
 
 
 %% Create a categorical description of trial types
-
 % Glossary: Match means Bpod and click evidence agrees, Mismatch means they
 %           disagree 
 %           Correct and Error always refers to the Bpods decision
 %           based on the programmed trial type (left or right)
-%
 
-% Description of trial types and logic
-
-% Uncompleted: Trial did not end with Reward/Punish,
-%          nearly always means animal didn't sample correctly
-% Definition: End State = ~WaitForReward | ~Punish    
-%             Can use ~T.completedTrial
-
-% Match, Correct, Rewarded: Correct decision ending with Reward,
-%          truly correct for both Bpod and actual clicks heard
-% Definition: (highEvidenceSideBpod & highEvidenceSideClicks ==
-%             sideChosen) & ~CatchTrial & T.completedTrial
-
-% Match, Error, Unrewarded: Incorrect decision ending with punishment,
-%          truly incorrect for both Bpod and actual clicks
-% Definition: (highEvidenceSideBpod & highEvidenceSideClicks ==
-%             ~sideChosen) & ~CatchTrial & T.completedTrial
-
-% Match, Correct, Unrewarded - WT
-% Animal made correct decision(Bpod), but didn't reach waiting time.
-% Definition: ~catchTrial & correctSideChosenBpod & correctSideChosenClicks
-% & ~rewardedTrial & T.completedTrial
-%            This needs to be verified, but seems to work
-
-% Mismatch, BPod Correct, Unrewarded - WT
-%Animal made correct decision(Bpod), but didn't reach waiting time.
-% Definition: ~catchTrial & correctSideChosenBpod & ~rewardedTrial & T.completedTrial
-%            This needs to be verified, but seems to work
-
-% Mismatch, Incorrect Clicks, Rewarded: Mismatch between evidence and bpod, 
-%          We either keep these and treat them as low-evidence correct or
-%          discard
-% Definition: ~T.catchTrial & ~T.correctSideChosenClicks & T.rewardedTrial & T.completedTrial
-
-% Match, Catch, Correct:  Catch trial where animal made the correct decision and
-%           evidence and bpod agree
-% Definition: T.catchTrial & T.correctSideChosenBpod & T.correctSideChosenClicks
-
-% Mismatch, Catch, Correct Clicks
-%      B = Catch trial where animal made the correct decision by the
-%           evidence but the bpod is incorrect
-% Definition: T.catchTrial & ~T.correctSideChosenBpod & T.correctSideChosenClicks
-%          
-% Match, Catch, Error: Catch trial where animal made the wrong 
-%          decision and the evidence and Bpod agrees
-% Definition: T.catchTrial & ~T.correctSideChosenBpod & ~T.correctSideChosenClicks    
-
-% Mismatch, Catch, Correct Bpod, : Catch trial where animal made 
-%          the wrong decision on the clicks but the Bpod disagrees
-% Definition: T.catchTrial & T.correctSideChosenBpod & ~T.correctSideChosenClicks    
-
-% Mismatch, (PsuedoCatch), Correct Clicks, : Animal made correct 
-%           decision by Clicks, but Bpod disagrees
-% Definition: ~catchTrial & correctSideChosenClicks & ~rewardedTrial
-%           This needs to be verified, but seems to work
-
-%% Implementation of logic
-
-% First get some potentiallt useful combinations
+% First get some potentially useful combinations
 evidenceMatch    = T.highEvidenceSideBpod == T.highEvidenceSideClicks & ...
                    T.completedTrial;
 evidenceMismatch = T.highEvidenceSideBpod ~= T.highEvidenceSideClicks &...
@@ -78,21 +18,24 @@ evidenceMismatch = T.highEvidenceSideBpod ~= T.highEvidenceSideClicks &...
 choiceMatchBpod  = T.sideChosen == T.highEvidenceSideBpod;
 choiceMatchClick = T.sideChosen == T.highEvidenceSideClicks;
 
-% Type 1 = Uncompleted: Trial did not end with Reward/Punish,
+% Uncompleted: Trial did not end with Reward/Punish
+%   Usually means animal didn't sample correctly
 trialOutcome(~T.completedTrial) = categorical({'Uncompleted'});
 
-% Type 2 = Correct: Correct decision ending with Reward,
+% Match, Correct, Rewarded: Correct decision ending with Reward
+%   Correct for both Bpod and actual clicks
 correctBpodClick  = evidenceMatch & choiceMatchBpod;
 trialOutcome(correctBpodClick & ~T.catchTrial & T.completedTrial) ...
              = categorical({'Match, Correct, Rewarded'});
 
-% Type 3 = Incorrect: Incorrect decision ending with punishment,
+% Match, Error, Unrewarded: Incorrect decision ending with punishment,
+% Incorrect for both Bpod and actual clicks
 errorBpod = T.sideChosen ~= T.highEvidenceSideBpod;
 trialOutcome(errorBpod & evidenceMatch & ~T.catchTrial & T.completedTrial) ...
              = categorical({'Match, Error, Unrewarded'});
   
 % Match, Correct, Unrewarded - WT Animal made correct decision(Bpod & Clicks)
-%           but didn't reach waiting time.
+%   but didn't reach waiting time
 trialOutcome(~T.catchTrial & T.correctSideChosenBpod &  T.correctSideChosenClicks ...
              & ~T.rewardedTrial & T.completedTrial) = ...
              categorical({'Match, Correct, Unrewarded - WT'});
