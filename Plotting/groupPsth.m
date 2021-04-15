@@ -10,15 +10,9 @@ function [g] = groupPsth(varargin)
 %   Previous     = The amount of time (ms) before the event to include.
 %   Post         = The amount of time (ms) after the event to include.
 %   BinSize      = Time (ms) per bin
-%   Counts       = Logical or numeric scalar, 0 or 1. 0 gives results in
+%   Hz           = Logical or numeric scalar, 0 or 1. 0 gives results in
 %                  Hz, 1 gives results in counts
-%   FigureHandle = Either 0, 1 or 2. 0 returns no figure, 1 returns bar,
-%                  histogram style, 2 returns a line plot.
-%   Visible      = Either 'on' or 'off'. Determines if the figure is
-%                  visible (on) or hidden (off)
-%
-%   TODO: Need to be confident of y axis before moving to categorical plot!
-%
+%   Title        = Set title for figure
 %% parse variable input arguments
 
 p = inputParser; % Create object of class 'inputParser'
@@ -29,6 +23,11 @@ post  = 2500; % in ms
 sbin  = 100;  % in ms
 defHz = true;
 deftitle = 'Visualising Spike Densities';
+defSubTitle = {'PSTH','Raster'};
+defXLabelPsth = 'Time (ms)';
+defYLabelPsth = 'Frequency (HZ)';
+defXLabelRaster = 'Time (ms)';
+defYLabelRaster = 'Trial';
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -41,6 +40,8 @@ valBinaryScalar = @(x) validateattributes(x, {'logical', 'numeric'},...
 valGroup = @(x) validateattributes(x, {'numeric', 'categorical',...
     'calendarDuration', 'datetime', 'duration', 'logical', 'string'}, {});
 valText = @(x) validateattributes(x, {'char', 'string'}, {'nonempty'});
+valTitleArray = @(x) validateattributes(x, {'cell', 'string'},...
+    {'nonempty', 'length', 2});
     
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNumColNonEmpty);
@@ -50,17 +51,27 @@ addParameter(p, 'Post', post, valNumScalarNonEmpty);
 addParameter(p, 'BinSize', sbin, valNumScalarNonEmpty);
 addParameter(p, 'Hz', defHz, valBinaryScalar);
 addParameter(p, 'Title', deftitle, valText);
+addParameter(p, 'SubTitles',defSubTitle',valTitleArray);
+addParameter(p, 'XLabelPsth', defXLabelPsth, valText);
+addParameter(p, 'YLabelPsth', defYLabelPsth, valText);
+addParameter(p, 'XLabelRaster', defXLabelRaster, valText);
+addParameter(p, 'YLabelRaster', defYLabelRaster, valText); 
 
 parse(p, varargin{:});
 
-spikeTimes = p.Results.spikeTimes; 
-eventTimes = p.Results.eventTimes;
-group      = p.Results.group;
-prev       = p.Results.Previous;
-post       = p.Results.Post;
-sbin       = p.Results.BinSize;
-Hz         = p.Results.Hz;
-figTitle   = p.Results.Title;
+spikeTimes   = p.Results.spikeTimes; 
+eventTimes   = p.Results.eventTimes;
+group        = p.Results.group;
+prev         = p.Results.Previous;
+post         = p.Results.Post;
+sbin         = p.Results.BinSize;
+Hz           = p.Results.Hz;
+figTitle     = p.Results.Title;
+subTitles    = p.Results.SubTitles;
+XLabelPsth   = p.Results.XLabelPsth;
+YLabelPsth   = p.Results.YLabelPsth;
+XLabelRaster = p.Results.XLabelRaster;
+YLabelRaster = p.Results.YLabelRaster;
 
 clear p
 
@@ -86,12 +97,14 @@ spikeTimesFromEvent = compareSpikes2Events(spikeTimes, eventTimes,...
 
 g(1,1) = gramm('x', binCenters', 'y', binnedSpikes', 'color', group);
 g(1,1).stat_summary('setylim', true);
-g(1,1).set_title('stat_summary()');
+g(1,1).set_title(subTitles(1));
 g(1,1).axe_property('YLim', [0 inf]);
+g(1,1).set_names('x', XLabelPsth, 'y', YLabelPsth);
 
 g(2,1) = gramm('x', spikeTimesFromEvent', 'color', group);
 g(2,1).geom_raster();
-g(2,1).set_title('geom_raster()');
+g(2,1).set_title(subTitles(2));
+g(2,1).set_names('x', XLabelRaster, 'y', YLabelRaster);
 
 g.set_title(figTitle);
 g.draw();
