@@ -14,10 +14,12 @@ function [g] = groupPsthTrialLimits(varargin)
 %   BinSize      = Time (ms) per bin
 %   Hz           = Logical or numeric scalar, 0 or 1. 0 gives results in
 %                  Hz, 1 gives results in counts
+%   Title        = String to use as figure title
+%   Parent       = handle to a figure or uipanel to plot into
+%   PlotType     = 1, 2 or 3 - will plot (1) PSTH, (2) rasters, 
+%                 (3=Default) both
 %
-%   TODO: Maybe options to only plot 1 of the subplots or different
-%         types?
-%         Adapt this so it will handle both single and double time vector?
+%   TODO: Adapt this so it will handle both single and double time vectors?
 %
 %% parse variable input arguments
 
@@ -30,6 +32,8 @@ sbin  = 100;  % in ms
 defHz = true;
 deftitle = 'Visualising Spike Densities';
 defSubTitle = {'PSTH','Raster'};
+defParent   = [];
+defPlotType = 3;
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -46,6 +50,8 @@ valGroup = @(x) validateattributes(x, {'numeric', 'categorical',...
 valText = @(x) validateattributes(x, {'char', 'string'}, {'nonempty'});
 valTitleArray = @(x) validateattributes(x, {'cell', 'string'}, {'nonempty'}, ...
     {'length',2});
+valPlotType = @(x) validateattributes(x, {'numeric'},...
+    {'nonempty','scalar','>',0,'<',4});
     
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNum2ColNonEmpty);
@@ -55,8 +61,9 @@ addParameter(p, 'Post', post, valNumScalarNonEmpty);
 addParameter(p, 'BinSize', sbin, valNumScalarNonEmpty);
 addParameter(p, 'Hz', defHz, valBinaryScalar);
 addParameter(p, 'Title', deftitle, valText);
-addParameter(p, 'SubTitles',defSubTitle',valTitleArray)
-
+addParameter(p, 'SubTitles',defSubTitle,valTitleArray)
+addParameter(p, 'Parent', defParent, @ishandle);
+addParameter(p, 'PlotType',defPlotType,valPlotType)
 parse(p, varargin{:});
 
 spikeTimes  = p.Results.spikeTimes; 
@@ -69,6 +76,8 @@ sbin        = p.Results.BinSize;
 Hz          = p.Results.Hz;
 figTitle    = p.Results.Title;
 subTitles   = p.Results.SubTitles;
+plotType    = p.Results.PlotType;
+parent      = p.Results.Parent;
 
 clear p
 
@@ -100,19 +109,30 @@ else
     rasterYAxisLabel = 'Firing Rate (Count)';
 end
 
-g(1,1) = gramm('x', binCenters', 'y', binnedSpikes', 'color', group);
+if plotType > 2
+    yIdx = 2;
+else
+    yIdx = 1;
+end
 
-g(1,1).stat_summary('setylim',true);
-g(1,1).set_title(subTitles(1));
-g(1,1).set_names('x','Time (ms)','y', rasterYAxisLabel,'color','Groups');
+if plotType == 2
+    g(1,1) = gramm('x', binCenters', 'y', binnedSpikes', 'color', group);
+    g(1,1).stat_summary('setylim',true);
+    g(1,1).set_title(subTitles(1));
+    g(1,1).set_names('x','Time (ms)','y', rasterYAxisLabel,'color','Groups');
+end
 
-g(1,2) = gramm('x', spikeTimesFromEvent', 'color', group);
-g(1,2).geom_raster();
-g(1,2).set_title(subTitles(2));
-g(1,2).set_names('x','Time (ms)','y', 'Trials','color','Groups');
-
+if plotType == 1 || plotType == 3
+    g(1,yIdx) = gramm('x', spikeTimesFromEvent', 'color', group);
+    g(1,yIdx).geom_raster();
+    g(1,yIdx).set_title(subTitles(2));
+    g(1,yIdx).set_names('x','Time (ms)','y', 'Trials','color','Groups');
+end
 
 g.set_title(figTitle);
+if ~isempty(parent)
+    g.set_parent(parent);
+end
 g.draw();
 
 end
