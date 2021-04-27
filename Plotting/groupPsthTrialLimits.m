@@ -1,9 +1,9 @@
 function [g] = groupPsthTrialLimits(varargin)
 % GROUPPSTH Return figure of a persitimuls time histogram
-%   [g] = groupPsthTrialLimits(spikeTimes, eventTimes, group) takes a vector  
+%   [g] = groupPsthTrialLimits(spikeTimes, eventTimes, *group) takes a vector  
 %   of spike times(s), a two column matrix of event times (s) - first
 %   column is the 0 point, second column is trial start/end point,
-%   and group (an array with the same length as event times, 
+%   and optinally group (an array with the same length as event times, 
 %   with each element defining the group the event belongs to 
 %   (for example, correct, error, or low/mid/high evidence)), 
 %   and returns a two element figure with rasters and mean spike times
@@ -34,6 +34,8 @@ deftitle = 'Visualising Spike Densities';
 defSubTitle = {'PSTH','Raster'};
 defParent   = [];
 defPlotType = 3;
+defGroup    = [];
+
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -55,7 +57,7 @@ valPlotType = @(x) validateattributes(x, {'numeric'},...
     
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNum2ColNonEmpty);
-addRequired(p, 'group', valGroup);
+addOptional(p, 'group', defGroup, valGroup);
 addParameter(p, 'Previous', prev, valNumScalarNonEmpty);
 addParameter(p, 'Post', post, valNumScalarNonEmpty);
 addParameter(p, 'BinSize', sbin, valNumScalarNonEmpty);
@@ -81,6 +83,12 @@ parent      = p.Results.Parent;
 
 clear p
 
+if isempty(group)
+    group = ones(size(eventTimes));
+    setColour = true;
+else
+    setColour = false;
+end
 assert(length(eventTimes) == length(group), ['group must be the same length', ...
     'as eventTimes']);
 
@@ -117,14 +125,21 @@ end
 
 if plotType == 2
     g(1,1) = gramm('x', binCenters', 'y', binnedSpikes', 'color', group);
+    if setColour
+        g(1,1).set_color_options('map',[0 0 0],'n_color',1,'n_lightness',1);
+    end
     g(1,1).stat_summary('setylim',true);
+    g(1,1).axe_property('YLim',[-5 Inf]); % Don't allow negative values
     g(1,1).set_title(subTitles(1));
     g(1,1).set_names('x','Time (ms)','y', rasterYAxisLabel,'color','Groups');
 end
 
 if plotType == 1 || plotType == 3
     g(1,yIdx) = gramm('x', spikeTimesFromEvent', 'color', group);
-    g(1,yIdx).geom_raster();
+    if setColour
+        g(1,1).set_color_options('map',[0 0 0],'n_color',1,'n_lightness',1);
+    end
+    g(1,yIdx).geom_raster();   
     g(1,yIdx).set_title(subTitles(2));
     g(1,yIdx).set_names('x','Time (ms)','y', 'Trials','color','Groups');
 end
