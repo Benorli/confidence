@@ -123,7 +123,7 @@ else
     yIdx = 1;
 end
 
-if plotType == 2
+if plotType >= 2
     g(1,1) = gramm('x', binCenters', 'y', binnedSpikes', 'color', group);
     if setColour
         g(1,1).set_color_options('map',[0 0 0],'n_color',1,'n_lightness',1);
