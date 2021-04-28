@@ -135,13 +135,13 @@ if plotType >= 2
 end
 
 if plotType == 1 || plotType == 3
-    g(1,yIdx) = gramm('x', spikeTimesFromEvent', 'color', group);
+    g(yIdx, 1) = gramm('x', spikeTimesFromEvent', 'color', group);
     if setColour
         g(1,1).set_color_options('map',[0 0 0],'n_color',1,'n_lightness',1);
     end
-    g(1,yIdx).geom_raster();   
-    g(1,yIdx).set_title(subTitles(2));
-    g(1,yIdx).set_names('x','Time (ms)','y', 'Trials','color','Groups');
+    g(yIdx, 1).geom_raster();   
+    g(yIdx, 1).set_title(subTitles(2));
+    g(yIdx, 1).set_names('x','Time (ms)','y', 'Trials','color','Groups');
 end
 
 g.set_title(figTitle);
