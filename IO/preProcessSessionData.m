@@ -4,8 +4,8 @@ function [T] = preProcessSessionData(varargin)
 %including data in a format ready for analysis
 %
 % Input:
-%   epyhsTrialStartTime: numeric, ephys start times
-%   idxEpyhsTrialStartTime: numeric integer or logical, the index within
+%   ephysTrialStartTime: numeric, ephys start times
+%   idxephysTrialStartTime: numeric integer or logical, the index within
 %       the SessionData which are included in the ephysData
 %   dataFile: struct, file location or nothing, which brings up gui. See
 %       trials2table for more info
@@ -15,7 +15,7 @@ function [T] = preProcessSessionData(varargin)
 % set defaults
 defaultDatafile = [];
 defaultConversionFile = [];
-defaultEpyhsIdx = [];
+defaultephysIdx = [];
 
 isFileLoc = @(x) ischar(x) || isstring(x) || iscellstr(x);
 validConversionArrayOrFile = @(x) isFileLoc(x) ||...
@@ -27,8 +27,8 @@ validIdx = @(x) validateattributes(x, {'logical', 'numeric'},...
     {'integer'});
 
 p = inputParser;
-addRequired(p, 'epyhsTrialStartTime', validNumeric);
-addOptional(p, 'idxEpyhsTrialStartTime', defaultEpyhsIdx, validIdx);
+addRequired(p, 'ephysTrialStartTime', validNumeric);
+addOptional(p, 'idxephysTrialStartTime', defaultephysIdx, validIdx);
 addParameter(p, 'dataFile', defaultDatafile, validStructOrFile);
 addParameter(p, 'conversionFile', defaultConversionFile,...
     validConversionArrayOrFile);
@@ -36,13 +36,13 @@ parse(p, varargin{:});
 
 data = p.Results.dataFile;
 conversionFile = p.Results.conversionFile;
-epyhsTrialStartTime = p.Results.epyhsTrialStartTime;
-idxEpyhsTrialStartTime = p.Results.idxEpyhsTrialStartTime;
+ephysTrialStartTime = p.Results.ephysTrialStartTime;
+idxephysTrialStartTime = p.Results.idxephysTrialStartTime;
 
 clear p
 
-if isempty(idxEpyhsTrialStartTime)
-    idxEpyhsTrialStartTime = 1:data.nTrials;
+if isempty(idxephysTrialStartTime)
+    idxephysTrialStartTime = 1:data.nTrials;
 end
 
 % if no input, select files with gui
@@ -69,7 +69,7 @@ end
 T = trials2table('dataFile', data, 'conversionFile', conversionFile);
 T = combineTrialConditions(T);
 T = extractRawData(data, T);
-T.epyhsTrialStartTime = NaN(data.nTrials, 1);
-T.epyhsTrialStartTime(idxEpyhsTrialStartTime) = epyhsTrialStartTime;
+T.ephysTrialStartTime = NaN(data.nTrials, 1);
+T.ephysTrialStartTime(idxephysTrialStartTime) = ephysTrialStartTime;
 
 end
