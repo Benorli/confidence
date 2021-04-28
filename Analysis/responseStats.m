@@ -148,48 +148,48 @@ if drawPlot
     end    
     leaveAx = subplot(2,xPlots,1);
     title('Unrewarded Trials');
-    hold('on',leaveAx);
+    hold(leaveAx,'on');
     leavePlots = plotResponseStats(leaveAx, leaveStats, ...
         'Legend', legends{1});
     for prcI = 1:length(percentiles) - 1
         leavePlots(prcI+1) = plotResponseStats(leaveAx, leavePrcStats(prcI),...
             'color',cmap([1:2] + ((prcI-1)*2),:),'Legend',legends{prcI+1});     
     end   
-    hold('off',leaveAx);
+    hold(leaveAx,'off');
   
     rewardAx = subplot(2,xPlots,2);
     title('Rewarded Trials');
-    hold('on',rewardAx);
+    hold(rewardAx,'on');
     rewardPlots = plotResponseStats(rewardAx, rewardStats, ...
         'Legend', legends{1});
     for prcI = 1:length(percentiles) - 1
         rewardPlots(prcI+1) = plotResponseStats(rewardAx, rewardPrcStats(prcI),... 
         'color',cmap([1:2] + ((prcI-1)*2),:),'Legend',legends{prcI+1});
     end   
-    hold('off',rewardAx);
+    hold(rewardAx,'off');
   
     if smoothData
         leaveAxSm = subplot(2,xPlots,3);
         title('Unrewarded Trials - Smoothed');
-        hold('on',leaveAx);
+        hold(leaveAx,'on');
         leaveSmPlots = plotResponseStats(leaveAxSm, leaveStats,'smooth',...
             'Legend', legends{1});      
         for prcI = 1:length(percentiles) - 1
             leaveSmPlots(prcI+1) = plotResponseStats(leaveAxSm, leavePrcStats(prcI),'smooth',...
             'color',cmap([1:2] + ((prcI-1)*2),:), 'Legend', legends{prcI+1});
         end   
-        hold('off',leaveAx);
+        hold(leaveAx, 'off');
 
         rewardAxSm = subplot(2,xPlots,4);
         title('Rewarded Trials - Smoothed');
-        hold('on',rewardAx);
+        hold(rewardAx,'on');
         rewardPlots = plotResponseStats(rewardAxSm, rewardStats,'smooth',...
             'Legend', legends{1}); 
         for prcI = 1:length(percentiles) - 1
             rewardPlots(prcI+1) = plotResponseStats(rewardAxSm, rewardPrcStats(prcI),'smooth',...
             'color',cmap([1:2] + ((prcI-1)*2),:), 'Legend', legends{prcI+1});
         end   
-        hold('off',rewardAx);   
+        hold(rewardAx,'off');   
     end
 end % end if drawPlot
 
