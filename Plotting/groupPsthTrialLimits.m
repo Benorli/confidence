@@ -129,7 +129,7 @@ if plotType >= 2
         g(1,1).set_color_options('map',[0 0 0],'n_color',1,'n_lightness',1);
     end
     g(1,1).stat_summary('setylim',true);
-    g(1,1).axe_property('YLim',[-5 Inf]); % Don't allow negative values
+    g(1,1).axe_property('YLim',[0 Inf]); % Don't allow negative values
     g(1,1).set_title(subTitles(1));
     g(1,1).set_names('x','Time (ms)','y', rasterYAxisLabel,'color','Groups');
 end
