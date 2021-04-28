@@ -58,8 +58,11 @@ assert(any(strcmp(T.Properties.VariableNames,'ephysTrialStartTime')),...
 
 %% Gather trial data
 
+% find spike trials
+spikeTrials = isSpikeTrial(spikeTimes, T.ephysTrialStartTime);
+
 % Rewarded Trials
-rewardTrials = find(T.rewarded);
+rewardTrials = find(T.rewarded & spikeTrials); 
 rewardTimes  = [T.trialEndTime(rewardTrials), ...
                 T.waitingStartTime(rewardTrials)] ...
              +  T.ephysTrialStartTime(rewardTrials);   
@@ -67,7 +70,7 @@ rewardSplits = prctile(T.waitingTime(rewardTrials),percentiles);
 rewardGroups = discretize(T.waitingTime(rewardTrials),rewardSplits);
 
 % Unrewarded Trials
-leaveTrials  = find(T.selfExit);
+leaveTrials  = find(T.selfExit & spikeTrials);
 leaveTimes  = [T.trialEndTime(leaveTrials), ...
                 T.waitingStartTime(leaveTrials)] ...
              +  T.ephysTrialStartTime(leaveTrials);   
@@ -212,7 +215,7 @@ binnedSpikes = reshape(cell2mat(binnedSpikes),length(binCenters),length(binnedSp
 
 % Remove timepoints that have less than 10 trials included
 trialsIncluded = sum(~isnan(binnedSpikes));
-points2Remove = find(trialsIncluded<10);
+points2Remove = find(trialsIncluded<4);
 if any(find(diff(sign(diff(points2Remove)))))
     warning('There are discontinuities in the trials 2 remove...')
     % TODO: Add more sophisticated discontinuity checking here
@@ -293,7 +296,7 @@ if smoothData
 
     % Remove timepoints that have less than 10 trials included
     trialsIncluded = sum(~isnan(binnedSpikes));
-    points2Remove = find(trialsIncluded<10);
+    points2Remove = find(trialsIncluded<4);
     if any(find(diff(sign(diff(points2Remove)))))
         warning('There are discontinuities in the trials 2 remove...')
         % TODO: Add more sophisticated discontinuity checking here
@@ -332,7 +335,7 @@ if smoothData
 
     % find FR minimum (or the latest 0 point prior to the peak)
     [minFRSm,minFRSmIdx] = min(smoothFR(1:peakIdx));
-    zeroPointSmIdx = max([1 ; find(smoothFR(1:peakIdx) == 0); minFRSmIdx]);
+    zeroPointSmIdx = max([1 ; find(smoothFR(1:peakIdx) == 0)'; minFRSmIdx]);
     slopeSm = peakFRSm./((peakTimeSm - binCenters(zeroPointSmIdx))./1000);
     
     results.smoothFR       = smoothFR;
