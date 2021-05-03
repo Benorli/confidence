@@ -15,11 +15,12 @@ function [responseData, statsFig] = responseStats(varargin)
 %% Input parsing
 p = inputParser; % Create object of class 'inputParser'
 % define defaults
-defBinSize    = 100;  % in ms
-defSmooth     = false; % Smooth data
-defPlot       = false; % Plot data
-defPercentile = [0 50 100]; 
-defParent     = [];
+defBinSize     = 100;  % in ms
+defSmooth      = false; % Smooth data
+defPlot        = false; % Plot data
+defPercentile  = [0 50 100]; 
+defParent      = [];
+defSpikeTrials = [];
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -32,6 +33,8 @@ valBinaryScalar = @(x) validateattributes(x, {'logical', 'numeric'},...
     {'nonempty', 'binary', 'scalar'});
 valPercentile = @(x) validateattributes(x, {'numeric'},...
     {'row','nonempty','>=', 0, '<=', 100,'increasing'});
+valBinaryCol = @(x) validateattributes(x, {'logical', 'numeric'},...
+    {'nonempty', 'binary', 'column'});
     
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'T', valTable);
@@ -40,6 +43,7 @@ addParameter(p, 'Smooth', defSmooth, valBinaryScalar);
 addParameter(p, 'Plot', defPlot, valBinaryScalar);
 addParameter(p, 'Parent', defParent, @ishandle);
 addParameter(p, 'Percentile', defPercentile, valPercentile);
+addParameter(p, 'SpikeTrials', defSpikeTrials, valBinaryCol);
 
 parse(p, varargin{:});
 
@@ -50,6 +54,7 @@ drawPlot    = p.Results.Plot;
 smoothData  = p.Results.Smooth;
 percentiles = p.Results.Percentile;
 parent      = p.Results.Parent;
+spikeTrials = p.Results.SpikeTrials;
 
 clear p
 
@@ -58,8 +63,13 @@ assert(any(strcmp(T.Properties.VariableNames,'ephysTrialStartTime')),...
 
 %% Gather trial data
 
-% find spike trials
-spikeTrials = isSpikeTrial(spikeTimes, T.ephysTrialStartTime);
+if isempty(spikeTrials)
+    % find spike trials
+    spikeTrials = isSpikeTrial(spikeTimes, T.ephysTrialStartTime);
+else 
+    assert(length(spikeTrials) == T.Properties.CustomProperties.nTrials,... 
+        'SpikeTrials should have the same length as the trial number in T')
+end
 
 % Rewarded Trials
 rewardTrials = find(T.rewarded & spikeTrials); 

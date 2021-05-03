@@ -68,7 +68,8 @@ elseif length(bpodTrialStart) < length(ephysTrialStart)
     % Output mus be ephys times, indexed to Bpod times
     [bestMatchVal, bestMatchIdx] = min(matchVal);
     bpodIdxEphysTrialStart = ephysTrialStart(bestMatchIdx : bestMatchIdx +...
-        min([lengthDiff, length(bpodTrialStart)]) - 1);
+        min([length(ephysTrialStart) - bestMatchIdx,...
+        length(bpodTrialStart)]) - 1);
 end
 
 
