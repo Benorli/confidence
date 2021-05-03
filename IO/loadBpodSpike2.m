@@ -17,7 +17,11 @@ startDirectory = cd;
 if contains(name, 'BN')
    sessionLocation = pathStruct.ExperimentorsFromBase.BN;
 elseif contains(name, 'ML')
-   sessionLocation = pathStruct.ExperimentorsFromBase.ML;
+   temp = dir([pathStruct.BaseAnimalFolder name filesep 'MATLAB' filesep 'Click2*']);
+   if isempty(temp)
+       error('Couldn''t find Bpod directory')
+   end
+   sessionLocation = [filesep 'MATLAB' filesep temp.name filesep 'Session Data']; 
 else
     error('New experimentor, the file location is unknown')
 end
