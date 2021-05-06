@@ -2,7 +2,10 @@ function [matchIdx, isInShortVec] = matchElements(vecA, vecB)
 % MATCHELEMENTS takes two vectors of different lengths. It retruns which
 % elements of the longer vector are present in the short vector
 % (isInShortVec) and, for each elemnt of the short vector, the index for
-% where it can be found in the long vector.
+% where it can be found in the long vector. Simpler to use ismember in
+% future...
+%
+% [matchIdx, isInShortVec] = matchElements(vecA, vecB)
 
 validateattributes(vecA, {'numeric'}, {'vector'});
 validateattributes(vecB, {'numeric'}, {'vector'});
