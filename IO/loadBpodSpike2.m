@@ -40,7 +40,7 @@ cd([pathStruct.BaseAnimalFolder, name, '\MATLAB\Spike2Matlab'])
 assert(numel(spike2Files) == 2, ['Choose two files, one containing spikes,'...
     'the othe containing trial start times, these are exports from Spike2'])
 
-if contains(spike2Files{1}, 'spike')
+if contains(lower(spike2Files{1}), 'spike')
     spikesFile = spike2Files{1};
     spike2TrialStartFile = spike2Files{2};
 else
