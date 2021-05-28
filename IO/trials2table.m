@@ -96,7 +96,7 @@ for i = 1: size(conversion, 1)
 end
 
 varargout{1} = conversion;
-varargout{1} = data;
+varargout{2} = data;
 
 cd(start_directory)
     
