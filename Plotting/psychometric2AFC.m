@@ -108,7 +108,7 @@ function [varargout] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
     % Set default labels
     if strcmp(VarArgs.Results.DefaultTitle, 'on')
         title('Psychometric Plot for a Two Alternative Forced Choice Task')
-             xlabel(sprintf('Difference Over Sum of %s vs %s',...
+             xlabel(sprintf('Difference Over Sum of %s Clicks vs %s',...
                  VarArgs.Results.OptionB, VarArgs.Results.OptionA));
              ylabel(sprintf('P(%s Choice)', VarArgs.Results.OptionA));
     end 
