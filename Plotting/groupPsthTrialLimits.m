@@ -15,8 +15,9 @@ function [g] = groupPsthTrialLimits(varargin)
 %   Hz           = Logical or numeric scalar, 0 or 1. 0 gives results in
 %                  Hz, 1 gives results in counts
 %   Title        = String to use as figure title
+%   GroupNames   = Names to use for groups
 %   Parent       = handle to a figure or uipanel to plot into
-%   PlotType     = 1, 2 or 3 - will plot (1) PSTH, (2) rasters, 
+%   PlotType     = 1, 2 or 3 - will plot (1) rasters, (2) PSTH, 
 %                 (3=Default) both
 %
 %   TODO: Adapt this so it will handle both single and double time vectors?
@@ -26,8 +27,8 @@ function [g] = groupPsthTrialLimits(varargin)
 p = inputParser; % Create object of class 'inputParser'
 
 % define defaults
-prev  = 2500; % in ms
-post  = 2500; % in ms
+prev  = []; % in ms
+post  = 1000; % in ms
 sbin  = 100;  % in ms
 defHz = true;
 deftitle = 'Visualising Spike Densities';
@@ -35,7 +36,7 @@ defSubTitle = {'PSTH','Raster'};
 defParent   = [];
 defPlotType = 3;
 defGroup    = [];
-
+defGroupNames    = [];
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -54,6 +55,7 @@ valTitleArray = @(x) validateattributes(x, {'cell', 'string'}, {'nonempty'}, ...
     {'length',2});
 valPlotType = @(x) validateattributes(x, {'numeric'},...
     {'nonempty','scalar','>',0,'<',4});
+valGroupNames = @(x) validateattributes(x, {'char', 'string','cell'}, {'nonempty'});
     
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNum2ColNonEmpty);
@@ -66,6 +68,7 @@ addParameter(p, 'Title', deftitle, valText);
 addParameter(p, 'SubTitles',defSubTitle,valTitleArray)
 addParameter(p, 'Parent', defParent, @ishandle);
 addParameter(p, 'PlotType',defPlotType,valPlotType)
+addParameter(p, 'GroupNames', defGroupNames, valGroupNames);
 parse(p, varargin{:});
 
 spikeTimes  = p.Results.spikeTimes; 
@@ -80,6 +83,7 @@ figTitle    = p.Results.Title;
 subTitles   = p.Results.SubTitles;
 plotType    = p.Results.PlotType;
 parent      = p.Results.Parent;
+groupNames  = p.Results.GroupNames;
 
 clear p
 
@@ -89,8 +93,19 @@ if isempty(group)
 else
     setColour = false;
 end
+
 assert(length(eventTimes) == length(group), ['group must be the same length', ...
     'as eventTimes']);
+
+if isempty(groupNames)
+    setGroupNames = false;
+else
+    assert(length(groupNames) == length(unique(group)), ['groupNames must be the same length', ...
+    ' as number of unique Groups']);
+    setGroupNames = true;
+end
+
+
 
 %% set path
 load('pathStruct', 'pathStruct');
@@ -98,7 +113,11 @@ addpath(pathStruct.gramm)
 
 %% return spike times relative to each event
 
-group = categorical(group);
+if setGroupNames
+    group = categorical(groupNames(group));
+else
+    group = categorical(group);
+end
 
 spikeTimesFromEvent = compareSpikes2EventsMex(spikeTimes, eventTimes,...
     'Previous', prev,...
