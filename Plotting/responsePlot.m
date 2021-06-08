@@ -8,7 +8,7 @@ function [figHandle, responseData] = responsePlot(varargin)
 % Generate with 'preProcessSessionData' or 'parseIntanSessionData'
 % Optional Parameters:
 %       BinSize: Width of bins to use for PSTH  
-%       Percentiles : Divisions in WT to use for plotting groups 
+%       Percentile  : Divisions in WT to use for plotting groups 
 %       Previous    : The amount of time (ms) before the event to include.
 %       Post        : The amount of time (ms) after the event to include
 %       RmOutliers  : Logical, remove extreme high waiting times. 
