@@ -8,8 +8,8 @@ function panels = createSubPanels(varargin)
 % createSubPanels(2,2,3) will create and return a single panel in the lower 
 % left corner of the figuer.
 %   Name Value Arguments
-%   handle      = Handle to an existing to plot into, if not given will  
-%                 spawn a new figure
+%   handle      = Handle to an existing figure to plot into,   
+%                 if not given will spawn a new figure
 %   borders     = Width of outside borders.  Default is 2.5%
 %   spacing     = Width of internal spacing. Default is 1%
 %   title       = Logical, create a panel for a title. Will be last panel 

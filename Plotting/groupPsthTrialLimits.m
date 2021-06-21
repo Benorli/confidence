@@ -16,9 +16,12 @@ function [g] = groupPsthTrialLimits(varargin)
 %                  Hz, 1 gives results in counts
 %   Title        = String to use as figure title
 %   GroupNames   = Names to use for groups
+%   GroupTitle   = Label for group legend
 %   Parent       = handle to a figure or uipanel to plot into
 %   PlotType     = 1, 2 or 3 - will plot (1) rasters, (2) PSTH, 
 %                 (3=Default) both
+%   ShowError    = Show shaded error bars on PSTH's (logical, default = true)
+%   ZeroLine     = Show a vertical line at time 0 (logical, default = false)
 %
 %   TODO: Adapt this so it will handle both single and double time vectors?
 %
@@ -27,16 +30,20 @@ function [g] = groupPsthTrialLimits(varargin)
 p = inputParser; % Create object of class 'inputParser'
 
 % define defaults
-prev  = []; % in ms
-post  = 1000; % in ms
-sbin  = 100;  % in ms
-defHz = true;
-deftitle = 'Visualising Spike Densities';
-defSubTitle = {'PSTH','Raster'};
-defParent   = [];
-defPlotType = 3;
-defGroup    = [];
-defGroupNames    = [];
+prev            = []; % in ms
+post            = 1000; % in ms
+sbin            = 100;  % in ms
+defHz           = true;
+deftitle        = 'Visualising Spike Densities';
+defSubTitle     = {'PSTH','Raster'};
+defParent       = [];
+defPlotType     = 3;
+defGroup        = [];
+defGroupNames   = [];
+defGroupTitle   = "Groups";
+defOrdering     = [];
+defShowError    = true;
+defZeroLine     = false;
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -49,13 +56,14 @@ valBinaryScalar = @(x) validateattributes(x, {'logical', 'numeric'},...
     {'nonempty', 'binary', 'scalar'});
 % group must be a valid input for findgroups
 valGroup = @(x) validateattributes(x, {'numeric', 'categorical',...
-    'calendarDuration', 'datetime', 'duration', 'logical', 'string'}, {});
+    'calendarDuration', 'datetime', 'duration', 'logical', 'string','cell','char'}, {});
 valText = @(x) validateattributes(x, {'char', 'string'}, {'nonempty'});
 valTitleArray = @(x) validateattributes(x, {'cell', 'string'}, {'nonempty'}, ...
     {'length',2});
 valPlotType = @(x) validateattributes(x, {'numeric'},...
     {'nonempty','scalar','>',0,'<',4});
 valGroupNames = @(x) validateattributes(x, {'char', 'string','cell'}, {'nonempty'});
+valOrdering = @(x) validateattributes(x, {'char', 'string','cell','numeric'}, {'nonempty'});
     
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNum2ColNonEmpty);
@@ -69,6 +77,11 @@ addParameter(p, 'SubTitles',defSubTitle,valTitleArray)
 addParameter(p, 'Parent', defParent, @ishandle);
 addParameter(p, 'PlotType',defPlotType,valPlotType)
 addParameter(p, 'GroupNames', defGroupNames, valGroupNames);
+addParameter(p, 'GroupTitle', defGroupTitle, valText);
+addParameter(p, 'Ordering', defOrdering, valOrdering);
+addParameter(p, 'ShowError',defShowError,@(x) islogical(x));
+addParameter(p, 'ZeroLine',defZeroLine,@(x) islogical(x));
+
 parse(p, varargin{:});
 
 spikeTimes  = p.Results.spikeTimes; 
@@ -84,10 +97,14 @@ subTitles   = p.Results.SubTitles;
 plotType    = p.Results.PlotType;
 parent      = p.Results.Parent;
 groupNames  = p.Results.GroupNames;
+ordering    = p.Results.Ordering;
+showError   = p.Results.ShowError;
+groupTitle  = p.Results.GroupTitle;
+zeroLine  = p.Results.ZeroLine;
 
 clear p
 
-if isempty(group)
+if isempty(group) || length(unique(group)) == 1
     group = ones(size(eventTimes));
     setColour = true;
 else
@@ -100,11 +117,18 @@ assert(length(eventTimes) == length(group), ['group must be the same length', ..
 if isempty(groupNames)
     setGroupNames = false;
 else
-    assert(length(groupNames) == length(unique(group)), ['groupNames must be the same length', ...
+    assert(length(groupNames) == length(nanUnique(group)), ['groupNames must be the same length', ...
     ' as number of unique Groups']);
     setGroupNames = true;
 end
 
+if isempty(ordering)
+    setOrdering = false;
+else
+    assert(length(ordering) == length(nanUnique(group)), ['Ordering values must be the same length', ...
+    ' as number of unique Groups']);
+    setOrdering = true;
+end
 
 
 %% set path
@@ -147,10 +171,20 @@ if plotType >= 2
     if setColour
         g(1,1).set_color_options('map',[0 0 0],'n_color',1,'n_lightness',1);
     end
-    g(1,1).stat_summary('setylim',true);
-    g(1,1).axe_property('YLim',[0 Inf]); % Don't allow negative values
+    if setOrdering
+        g(1,1).set_order_options('color',ordering);
+    end
+    if showError
+        g(1,1).stat_summary('setylim',true);
+    else
+        g(1,1).stat_summary('setylim',true,'geom','line');
+    end
+    % g(1,1).axe_property('YLim',[0 Inf]); % Don't allow negative values
     g(1,1).set_title(subTitles(1));
-    g(1,1).set_names('x','Time (ms)','y', rasterYAxisLabel,'color','Groups');
+    g(1,1).set_names('x','Time (ms)','y', rasterYAxisLabel,'color',groupTitle);
+    if zeroLine
+        g(1,1).geom_vline('xintercept',0,'style','k:');
+    end
 end
 
 if plotType == 1 || plotType == 3
@@ -158,9 +192,13 @@ if plotType == 1 || plotType == 3
     if setColour
         g(1,1).set_color_options('map',[0 0 0],'n_color',1,'n_lightness',1);
     end
-    g(yIdx, 1).geom_raster();   
+    if setOrdering
+        g(yIdx, 1).set_order_options('color',ordering);
+    end
+    g(yIdx, 1).geom_raster('geom','point');   
+    g(yIdx, 1).set_point_options('base_size',1);
     g(yIdx, 1).set_title(subTitles(2));
-    g(yIdx, 1).set_names('x','Time (ms)','y', 'Trials','color','Groups');
+    g(yIdx, 1).set_names('x','Time (ms)','y', 'Trials','color',groupTitle);
 end
 
 g.set_title(figTitle);
@@ -171,4 +209,17 @@ g.draw();
 
 end
 
+function y = nanUnique(x,keepNaNs) % unique that ignores nans
 
+if nargin < 2
+    keepNaNs = true;
+end
+
+  y = unique(x);
+  if any(isnan(y))
+    y(isnan(y)) = []; % remove all nans
+    if keepNaNs
+        y(end+1) = NaN; % add the unique one.
+    end
+  end
+end
