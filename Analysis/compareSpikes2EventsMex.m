@@ -24,7 +24,7 @@ p = inputParser; % Create object of class 'inputParser'
 prev = 2500; % in ms
 post = 2500; % in ms
 defcellWrap = false;
-defTrialLimits = varargin{2} - prev./1000;
+defTrialLimits = [];
 
 % validation functions
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -52,6 +52,11 @@ trialLimits = p.Results.TrialLimits * 1000; % convert to ms
 cellWrap    = p.Results.WrapOutputInCell;
 prev        = p.Results.Previous;
 post        = p.Results.Post;
+
+% if trial limits not provided use psth cutoff
+if isempty(trialLimits)
+    trialLimits = eventTimes - prev./1000;
+end
 
 clear p
 
