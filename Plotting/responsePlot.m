@@ -1,4 +1,4 @@
-function [figHandle, responseData] = responsePlot(varargin)
+function [plotHandles, responseData] = responsePlot(varargin)
 %% Generates a plots that characterises an individual cells 
 %  response to the confidence task (2AFC). 
 % INPUT: 
