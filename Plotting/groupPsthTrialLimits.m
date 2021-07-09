@@ -179,11 +179,19 @@ if plotType >= 2
     else
         g(1,1).stat_summary('setylim',true,'geom','line');
     end
-    % g(1,1).axe_property('YLim',[0 Inf]); % Don't allow negative values
-    g(1,1).set_title(subTitles(1));
-    g(1,1).set_names('x','Time (ms)','y', rasterYAxisLabel,'color',groupTitle);
+    g(1,1).axe_property('YLim',[0 Inf]); % Don't allow negative values
+    g(1,1).set_title(subTitles(1),...
+        'FontSize', 20);
+    g(1,1).set_text_options('base_size', 15,...
+        'label_scaling', 2,...
+        'legend_scaling', 0.8,...
+        'legend_title_scaling', 1.2);
+    g(1,1).set_names('x','Time (ms)',...
+        'y', rasterYAxisLabel,...
+        'color',groupTitle);
     if zeroLine
-        g(1,1).geom_vline('xintercept',0,'style','k:');
+        g(1,1).geom_vline('xintercept',0,...
+            'style','k:');
     end
 end
 
@@ -195,18 +203,42 @@ if plotType == 1 || plotType == 3
     if setOrdering
         g(yIdx, 1).set_order_options('color',ordering);
     end
-    g(yIdx, 1).geom_raster('geom','point');   
-    g(yIdx, 1).set_point_options('base_size',1);
-    g(yIdx, 1).set_title(subTitles(2));
-    g(yIdx, 1).set_names('x','Time (ms)','y', 'Trials','color',groupTitle);
+    g(yIdx, 1).geom_raster('geom','point');
+    g(yIdx, 1).set_point_options('base_size', 2);
+    g(yIdx, 1).set_title(subTitles(2),...
+        'FontSize', 20);
+    g(yIdx,1).set_text_options('base_size', 15,...
+        'label_scaling', 2,...
+        'legend_scaling', 0.8,...
+        'legend_title_scaling', 1.2);
+    g(yIdx, 1).set_names('x','Time (ms)',...
+        'y', 'Trials',...
+        'color',groupTitle);
+    if zeroLine
+        g(yIdx,1).geom_vline('xintercept',0,...
+            'style','k:');
+    end
 end
 
-g.set_title(figTitle);
+g.set_title(figTitle,...
+    'FontSize', 26);
 if ~isempty(parent)
     g.set_parent(parent);
 end
 g.draw();
 
+if zeroLine
+    % Need to set new Y limits
+    [maxY, maxYIdx] = max([g(1,1).results.stat_summary.y]);
+    yCIs = [g(1,1).results.stat_summary.yci];
+    yCI = yCIs(maxYIdx);
+    g(1,1).update();
+    g(1,1).axe_property('YLim',...
+        [0 (maxY + yCI + 2)]);
+    g(1,1).set_layout_options('legend',false);
+    g(1,1).draw();
+end
+    
 end
 
 function y = nanUnique(x,keepNaNs) % unique that ignores nans
