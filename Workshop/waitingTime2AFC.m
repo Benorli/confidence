@@ -86,7 +86,7 @@ function [handle] = waitingTime2AFC(correctChoice, catchTrial, ...
 
     if ~drawLegend
         % g.set_layout_options('legend','false');
-        g.no_legend('color');
+        % g.no_legend('color');
     end
     
     g.draw();  

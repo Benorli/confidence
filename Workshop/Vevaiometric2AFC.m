@@ -134,7 +134,7 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
     end
     if ~drawLegend
         % g.set_layout_options('legend','false');
-        g.no_legend('color');
+        % g.no_legend('color');
     end
     if ~isempty(titleString)
         g.set_title(titleString);
