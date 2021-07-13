@@ -71,7 +71,7 @@ if ~iscell(conversionFile) && isempty(conversionFile)
     conversionFile = [pathname, filename];
 end
 
-if isFileLoc(conversionFile) % if input is file location
+if isFileLoc(conversionFile) % if input is file location   
     conversion = load(conversionFile);
     conversion = conversion.(subsref(fieldnames(conversion),...
         substruct('{}',{1}))); % unwrap
@@ -79,6 +79,24 @@ if isFileLoc(conversionFile) % if input is file location
         'be a cell array with 3 columns'])
 else % if input is conversion cell array
     conversion = conversionFile;
+end
+
+% Special case for adjusting Dual2AFCBen files
+if contains(conversionFile,'Dual2AFCBen')        
+    customFields = fieldnames(data.Custom);
+    for fieldI = 1:length(customFields)
+        data.(customFields{fieldI}) = data.Custom.(customFields{fieldI});
+        
+    end
+    temp = [data.TrialSettings.GUI];
+    GUIFields = fieldnames(temp);
+    for fieldI = 1:length(GUIFields)
+        data.(GUIFields{fieldI}) = [temp.(GUIFields{fieldI})];
+    end
+    % Fix trial number
+    if data.nTrials > length(data.ST) 
+        data.nTrials = length(data.ST);
+    end
 end
 
 clear conversionFile dataFile

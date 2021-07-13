@@ -128,13 +128,13 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
     cmap = pairedCmap([4 6],:);
 
     g = gramm('x',xData,'y',yData,'color',cData,...
-        'subset',subset  & (trialTypes ~= "Rewarded" & trialTypes ~= "Correct RDO"));
+        'subset',subset & trialTypes ~= "Rewarded" & trialTypes ~= "Correct RDO");
     if ~isempty(parent)
         g.set_parent(parent);
     end
     if ~drawLegend
         % g.set_layout_options('legend','false');
-        g.no_legend('color');
+        g.no_legend();
     end
     if ~isempty(titleString)
         g.set_title(titleString);
@@ -145,6 +145,7 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
     
     g.set_color_options('map',cmap,'n_color',2,'n_lightness',1);
     g.set_names('x','Stimulus (Diff/Sum)','y','Waiting Time (s)');
+    
     if drawMean
         g.stat_summary('bin_in',nBins,'geom',{'line','errorbar'},'type','sem');
         g.draw();
