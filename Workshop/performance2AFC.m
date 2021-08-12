@@ -51,7 +51,7 @@ function [handle] = performance2AFC(highEvidenceSide, chosenSide,...
     samplingDO = movmean(~completedSampling,movWidth);
     
     % calculate reward drop outs
-    rewardDO = double(~(rewardDelay <= waitingTime));
+    rewardDO = double(rewardDelay > waitingTime);
     rewardDO(~completedTrial | completedCatch) = nan;
     rewardDO = movmean(rewardDO,movWidth,'omitnan');
 

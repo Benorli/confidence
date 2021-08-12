@@ -39,6 +39,10 @@ validateattributes(trial, {'numeric'}, {'size', [1,1]})
 [~, maxIdx] = max(structfun(@(x) max(x, [], 'all'),...
     SessionData.RawEvents.Trial{trial}.States));
 allFieldnames = fieldnames(SessionData.RawEvents.Trial{trial}.States);
-lastState = allFieldnames(maxIdx);
+if isfield(SessionData,'Custom')
+    lastState = allFieldnames(maxIdx-1);
+else
+    lastState = allFieldnames(maxIdx-1);
+end
 
 end

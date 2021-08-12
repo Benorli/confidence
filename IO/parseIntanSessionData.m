@@ -30,6 +30,11 @@ T = combineTrialConditions(T);
 T = extractRawData(Combined.ConfidenceSessionData, T);
 
 % Sync the bpod and Intan trial stats if needed
+if ~exist('eventData','var')
+    try
+        eventData = Combined.eventData;
+    end
+end
 if ~any(strcmpi(T.Properties.VariableNames,...
         'ephysTrialStartTime'))
     T = syncIntanSessionData(T,eventData);        

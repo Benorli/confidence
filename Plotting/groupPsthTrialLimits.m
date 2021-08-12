@@ -58,8 +58,7 @@ valBinaryScalar = @(x) validateattributes(x, {'logical', 'numeric'},...
 valGroup = @(x) validateattributes(x, {'numeric', 'categorical',...
     'calendarDuration', 'datetime', 'duration', 'logical', 'string','cell','char'}, {});
 valText = @(x) validateattributes(x, {'char', 'string'}, {'nonempty'});
-valTitleArray = @(x) validateattributes(x, {'cell', 'string'}, {'nonempty'}, ...
-    {'length',2});
+valTitleArray = @(x) validateattributes(x, {'cell', 'string'}, {'nonempty'});
 valPlotType = @(x) validateattributes(x, {'numeric'},...
     {'nonempty','scalar','>',0,'<',4});
 valGroupNames = @(x) validateattributes(x, {'char', 'string','cell'}, {'nonempty'});
@@ -67,7 +66,7 @@ valOrdering = @(x) validateattributes(x, {'char', 'string','cell','numeric'}, {'
     
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNum2ColNonEmpty);
-addOptional(p, 'group', defGroup, valGroup);
+addOptional(p, 'Group', defGroup, valGroup);
 addParameter(p, 'Previous', prev, valNumScalarNonEmpty);
 addParameter(p, 'Post', post, valNumScalarNonEmpty);
 addParameter(p, 'BinSize', sbin, valNumScalarNonEmpty);
@@ -87,7 +86,7 @@ parse(p, varargin{:});
 spikeTimes  = p.Results.spikeTimes; 
 eventTimes  = p.Results.eventTimes(:,1);
 trialLimits = p.Results.eventTimes(:,2);
-group       = p.Results.group;
+group       = p.Results.Group;
 prev        = p.Results.Previous;
 post        = p.Results.Post;
 sbin        = p.Results.BinSize;
@@ -114,15 +113,15 @@ end
 assert(length(eventTimes) == length(group), ['group must be the same length', ...
     'as eventTimes']);
 
-if isempty(groupNames)
+if isempty(groupNames) || length(nanUnique(group)) == 1
     setGroupNames = false;
 else
-    assert(length(groupNames) == length(nanUnique(group)), ['groupNames must be the same length', ...
-    ' as number of unique Groups']);
+%     assert(length(groupNames) == length(nanUnique(group) ), ['groupNames must be the same length', ...
+%     ' as number of unique Groups']);
     setGroupNames = true;
 end
 
-if isempty(ordering)
+if isempty(ordering)  || length(nanUnique(group)) == 1
     setOrdering = false;
 else
     assert(length(ordering) == length(nanUnique(group)), ['Ordering values must be the same length', ...
@@ -180,15 +179,17 @@ if plotType >= 2
         g(1,1).stat_summary('setylim',true,'geom','line');
     end
     g(1,1).axe_property('YLim',[0 Inf]); % Don't allow negative values
-    g(1,1).set_title(subTitles(1),...
-        'FontSize', 20);
-    g(1,1).set_text_options('base_size', 15,...
-        'label_scaling', 2,...
-        'legend_scaling', 0.8,...
-        'legend_title_scaling', 1.2);
+%     g(1,1).set_title(subTitles(1),...
+%         'FontSize', 20);
+%     g(1,1).set_text_options('base_size', 15,...
+%         'label_scaling', 2,...
+%         'legend_scaling', 0.8,...
+%         'legend_title_scaling', 1.2);
     g(1,1).set_names('x','Time (ms)',...
         'y', rasterYAxisLabel,...
         'color',groupTitle);
+    g(1,1).set_title(subTitles(1));
+    g(1,1).set_names('x','Time (ms)','y', rasterYAxisLabel,'color',groupTitle);
     if zeroLine
         g(1,1).geom_vline('xintercept',0,...
             'style','k:');
@@ -205,12 +206,12 @@ if plotType == 1 || plotType == 3
     end
     g(yIdx, 1).geom_raster('geom','point');
     g(yIdx, 1).set_point_options('base_size', 2);
-    g(yIdx, 1).set_title(subTitles(2),...
-        'FontSize', 20);
-    g(yIdx,1).set_text_options('base_size', 15,...
-        'label_scaling', 2,...
-        'legend_scaling', 0.8,...
-        'legend_title_scaling', 1.2);
+%     g(yIdx, 1).set_title(subTitles(2),...
+%         'FontSize', 20);
+%     g(yIdx,1).set_text_options('base_size', 15,...
+%         'label_scaling', 2,...
+%         'legend_scaling', 0.8,...
+%         'legend_title_scaling', 1.2);
     g(yIdx, 1).set_names('x','Time (ms)',...
         'y', 'Trials',...
         'color',groupTitle);
@@ -218,28 +219,43 @@ if plotType == 1 || plotType == 3
         g(yIdx,1).geom_vline('xintercept',0,...
             'style','k:');
     end
+    g(yIdx, 1).geom_raster('geom','point');   
+    g(yIdx, 1).set_point_options('base_size',1);
+    if zeroLine
+        g(1,1).geom_vline('xintercept',0,'style','k:');
+    end
+    g(yIdx, 1).set_title(subTitles(2));
+    g(yIdx, 1).set_names('x','Time (ms)','y', 'Trials','color',groupTitle);
 end
 
-g.set_title(figTitle,...
-    'FontSize', 26);
+% g.set_title(figTitle,...
+%     'FontSize', 26);
 if ~isempty(parent)
     g.set_parent(parent);
 end
 g.draw();
 
-if zeroLine
-    % Need to set new Y limits
-    [maxY, maxYIdx] = max([g(1,1).results.stat_summary.y]);
-    yCIs = [g(1,1).results.stat_summary.yci];
-    yCI = yCIs(maxYIdx);
-    g(1,1).update();
-    g(1,1).axe_property('YLim',...
-        [0 (maxY + yCI + 2)]);
-    g(1,1).set_layout_options('legend',false);
-    g(1,1).draw();
-end
+% if zeroLine
+%     % Need to set new Y limits
+%     [maxY, maxYIdx] = max([g(1,1).results.stat_summary.y]);
+%     yCIs = [g(1,1).results.stat_summary.yci];
+%     yCI = yCIs(maxYIdx);
+%     g(1,1).update();
+%     g(1,1).axe_property('YLim',...
+%         [0 (maxY + yCI + 2)]);
+%     g(1,1).set_layout_options('legend',false);
+%     g(1,1).draw();
+% end
     
+% Fix axis bugs
+if zeroLine && plotType == 2
+   % Get data values
+   allStats = [g(1,1).results.stat_summary.yci];
+   yMax = max(max(allStats)).* 1.05;
+   g(1,1).facet_axes_handles.YLim(2) = yMax;
 end
+
+end % end groupPSTHTrialLimits function
 
 function y = nanUnique(x,keepNaNs) % unique that ignores nans
 
