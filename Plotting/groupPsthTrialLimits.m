@@ -218,8 +218,6 @@ if plotType == 1 || plotType == 3
         g(yIdx,1).geom_vline('xintercept',0,...
             'style','k:');
     end
-    g(yIdx, 1).geom_raster('geom','point');   
-    g(yIdx, 1).set_point_options('base_size',1);
     if zeroLine
         g(1,1).geom_vline('xintercept',0,'style','k:');
     end
