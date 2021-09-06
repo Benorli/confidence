@@ -44,6 +44,7 @@ defGroupTitle   = "Groups";
 defOrdering     = [];
 defShowError    = true;
 defZeroLine     = false;
+defPointSize    = 2;
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -72,14 +73,15 @@ addParameter(p, 'Post', post, valNumScalarNonEmpty);
 addParameter(p, 'BinSize', sbin, valNumScalarNonEmpty);
 addParameter(p, 'Hz', defHz, valBinaryScalar);
 addParameter(p, 'Title', deftitle, valText);
-addParameter(p, 'SubTitles',defSubTitle,valTitleArray)
+addParameter(p, 'SubTitles', defSubTitle, valTitleArray)
 addParameter(p, 'Parent', defParent, @ishandle);
-addParameter(p, 'PlotType',defPlotType,valPlotType)
+addParameter(p, 'PlotType',defPlotType, valPlotType)
 addParameter(p, 'GroupNames', defGroupNames, valGroupNames);
 addParameter(p, 'GroupTitle', defGroupTitle, valText);
 addParameter(p, 'Ordering', defOrdering, valOrdering);
-addParameter(p, 'ShowError',defShowError,@(x) islogical(x));
-addParameter(p, 'ZeroLine',defZeroLine,@(x) islogical(x));
+addParameter(p, 'ShowError', defShowError, @(x) islogical(x));
+addParameter(p, 'ZeroLine', defZeroLine,@(x) islogical(x));
+addParameter(p, 'PointSize', defPointSize, valNumScalarNonEmpty);
 
 parse(p, varargin{:});
 
@@ -99,7 +101,8 @@ groupNames  = p.Results.GroupNames;
 ordering    = p.Results.Ordering;
 showError   = p.Results.ShowError;
 groupTitle  = p.Results.GroupTitle;
-zeroLine  = p.Results.ZeroLine;
+zeroLine    = p.Results.ZeroLine;
+pointSize   = p.Results.PointSize;
 
 clear p
 
@@ -204,7 +207,7 @@ if plotType == 1 || plotType == 3
         g(yIdx, 1).set_order_options('color',ordering);
     end
     g(yIdx, 1).geom_raster('geom','point');
-    g(yIdx, 1).set_point_options('base_size', 2);
+    g(yIdx, 1).set_point_options('base_size', pointSize);
     g(yIdx, 1).set_title(subTitles(2),...
         'FontSize', 20);
     g(yIdx,1).set_text_options('base_size', 15,...
