@@ -33,9 +33,9 @@ function [g] = groupPsthTrialLimits(varargin)
 p = inputParser; % Create object of class 'inputParser'
 
 % define defaults
-prev            = []; % in ms
-post            = 1000; % in ms
-sbin            = 100;  % in ms
+defPrev         = []; % in ms
+defPost         = 1000; % in ms
+defSbin         = 100;  % in ms
 defHz           = true;
 deftitle        = 'Visualising Spike Densities';
 defSubTitle     = {'PSTH','Raster'};
@@ -72,9 +72,9 @@ valOrdering = @(x) validateattributes(x, {'char', 'string','cell','numeric'}, {'
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNum2ColNonEmpty);
 addOptional(p, 'Group', defGroup, valGroup);
-addParameter(p, 'Previous', prev, valNumScalarNonEmpty);
-addParameter(p, 'Post', post, valNumScalarNonEmpty);
-addParameter(p, 'BinSize', sbin, valNumScalarNonEmpty);
+addParameter(p, 'Previous', defPrev, valNumScalarNonEmpty);
+addParameter(p, 'Post', defPost, valNumScalarNonEmpty);
+addParameter(p, 'BinSize', defSbin, valNumScalarNonEmpty);
 addParameter(p, 'Hz', defHz, valBinaryScalar);
 addParameter(p, 'Title', deftitle, valText);
 addParameter(p, 'SubTitles', defSubTitle, valTitleArray)
@@ -110,7 +110,12 @@ zeroLine    = p.Results.ZeroLine;
 pointSize   = p.Results.PointSize;
 isZScore    = p.Results.ZScore;
 
-clear p
+clear p valNumColNonEmpty valNum2ColNonEmpty valNumScalarNonEmpty...
+    valBinaryScalar valGroup valText valTitleArray valPlotType...
+    valGroupNames valOrdering defPrev defPost defSbin defHz deftitle...
+    defSubTitle defParent defPlotType defGroup defGroupNames...
+    defGroupTitle defOrdering defShowError defZeroLine defPointSize...
+    defZScore
 
 if isempty(group) || length(unique(group)) == 1
     group = ones(size(eventTimes));
@@ -119,22 +124,22 @@ else
     setColour = false;
 end
 
-assert(length(eventTimes) == length(group), ['group must be the same length', ...
-    'as eventTimes']);
+assert(length(eventTimes) == length(group), ['group must be the same ', ...
+    'length as eventTimes']);
 
 if isempty(groupNames) || length(nanUnique(group)) == 1
     setGroupNames = false;
 else
-%     assert(length(groupNames) == length(nanUnique(group) ), ['groupNames must be the same length', ...
-%     ' as number of unique Groups']);
+%     assert(length(groupNames) == length(nanUnique(group) ), ['groupNames ', ...
+%     'must be the same length as number of unique Groups']);
     setGroupNames = true;
 end
 
 if isempty(ordering)  || length(nanUnique(group)) == 1
     setOrdering = false;
 else
-    assert(length(ordering) == length(nanUnique(group)), ['Ordering values must be the same length', ...
-    ' as number of unique Groups']);
+    assert(length(ordering) == length(nanUnique(group)), ['Ordering ', ...
+    'values must be the same length as number of unique Groups']);
     setOrdering = true;
 end
 
