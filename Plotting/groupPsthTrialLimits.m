@@ -22,6 +22,9 @@ function [g] = groupPsthTrialLimits(varargin)
 %                 (3=Default) both
 %   ShowError    = Show shaded error bars on PSTH's (logical, default = true)
 %   ZeroLine     = Show a vertical line at time 0 (logical, default = false)
+%   PointSize    = Scalar value, scales raster point size.
+%   ZScore       = If using Z score, otherwise firing rate is used (logical,
+%                  default = false)
 %
 %   TODO: Adapt this so it will handle both single and double time vectors?
 %
@@ -82,6 +85,7 @@ addParameter(p, 'Ordering', defOrdering, valOrdering);
 addParameter(p, 'ShowError', defShowError, @(x) islogical(x));
 addParameter(p, 'ZeroLine', defZeroLine,@(x) islogical(x));
 addParameter(p, 'PointSize', defPointSize, valNumScalarNonEmpty);
+addParameter(p, 'ZScore', defZScore, valBinaryScalar);
 
 parse(p, varargin{:});
 
@@ -103,6 +107,7 @@ showError   = p.Results.ShowError;
 groupTitle  = p.Results.GroupTitle;
 zeroLine    = p.Results.ZeroLine;
 pointSize   = p.Results.PointSize;
+isZScore    = p.Results.ZScore;
 
 clear p
 
@@ -157,9 +162,9 @@ spikeTimesFromEvent = compareSpikes2EventsMex(spikeTimes, eventTimes,...
     'Hz', Hz);
 
 if Hz
-    rasterYAxisLabel = 'Firing Rate (Hz)';
+    psthYAxisLabel = 'Firing Rate (Hz)';
 else
-    rasterYAxisLabel = 'Firing Rate (Count)';
+    psthYAxisLabel = 'Firing Rate (Count)';
 end
 
 if plotType > 2
@@ -168,8 +173,28 @@ else
     yIdx = 1;
 end
 
+botYLim = 0; % Don't allow negative values for non ZScore data
+
+if isZScore 
+    nCellRows = length(binnedSpikes);
+    lenPrCell = length(binnedSpikes{1});
+    
+    binnedSpikes = cell2mat(binnedSpikes); % unpack
+    
+    % z score: uses mean and std from every bin in every trial
+    binnedSpikes = (binnedSpikes - nanmean(binnedSpikes, 'all'))...
+        / nanstd(binnedSpikes, 0, 'all');
+    
+    binnedSpikes = mat2cell(binnedSpikes, lenPrCell*ones(nCellRows, 1), 1);
+    
+    psthYAxisLabel = 'Firing rate (Z-Score)';
+    botYLim = -inf; % allow negative values
+end
+
 if plotType >= 2
-    g(1,1) = gramm('x', binCenters', 'y', binnedSpikes', 'color', group);
+    g(1,1) = gramm('x', binCenters',...
+                   'y', binnedSpikes,...
+                   'color', group);
     if setColour
         g(1,1).set_color_options('map',[0 0 0],'n_color',1,'n_lightness',1);
     end
@@ -181,7 +206,7 @@ if plotType >= 2
     else
         g(1,1).stat_summary('setylim',true,'geom','line');
     end
-    g(1,1).axe_property('YLim',[0 Inf]); % Don't allow negative values
+    g(1,1).axe_property('YLim',[botYLim Inf]); % Don't allow negative values
     g(1,1).set_title(subTitles(1),...
         'FontSize', 20);
     g(1,1).set_text_options('base_size', 15,...
@@ -189,9 +214,9 @@ if plotType >= 2
         'legend_scaling', 0.8,...
         'legend_title_scaling', 1.2);
     g(1,1).set_names('x','Time (ms)',...
-        'y', rasterYAxisLabel,...
+        'y', psthYAxisLabel,...
         'color',groupTitle);
-    g(1,1).set_names('x','Time (ms)','y', rasterYAxisLabel,'color',groupTitle);
+    g(1,1).set_names('x','Time (ms)','y', psthYAxisLabel,'color',groupTitle);
     if zeroLine
         g(1,1).geom_vline('xintercept',0,...
             'style','k:');
@@ -248,10 +273,15 @@ g.draw();
     
 % Fix axis bugs
 if plotType > 1
-   % Get data values
-   allStats = [g(1,1).results.stat_summary.y];
-   yMax = max(max(allStats)).* 1.33;
-   g(1,1).facet_axes_handles.YLim(2) = yMax;
+    % Get data values
+    allStats = [g(1,1).results.stat_summary.y];
+    yMax = max(max(allStats)).* 1.33;
+    g(1,1).facet_axes_handles.YLim(2) = yMax;
+    if isZScore % create lims when y can be negative
+        allStats = [g(1,1).results.stat_summary.y];
+        yMin = min(min(allStats)).* 1.33;
+        g(1,1).facet_axes_handles.YLim(1) = yMin;
+    end
 end
 
 end % end groupPSTHTrialLimits function
