@@ -48,6 +48,7 @@ defOrdering     = [];
 defShowError    = true;
 defZeroLine     = false;
 defPointSize    = 2;
+defZScore       = false;
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
