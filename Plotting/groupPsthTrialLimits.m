@@ -117,7 +117,7 @@ clear p valNumColNonEmpty valNum2ColNonEmpty valNumScalarNonEmpty...
     defGroupTitle defOrdering defShowError defZeroLine defPointSize...
     defZScore
 
-if isempty(group) || length(unique(group)) == 1
+if isempty(group) || length(nanUnique(group,false)) == 1
     group = ones(size(eventTimes));
     setColour = true;
 else
@@ -130,15 +130,15 @@ assert(length(eventTimes) == length(group), ['group must be the same ', ...
 if isempty(groupNames) || length(nanUnique(group)) == 1
     setGroupNames = false;
 else
-%     assert(length(groupNames) == length(nanUnique(group) ), ['groupNames ', ...
-%     'must be the same length as number of unique Groups']);
+     assert(length(groupNames) == length(nanUnique(group,false)), ['groupNames ', ...
+     'must be the same length as number of unique Groups']);
     setGroupNames = true;
 end
 
 if isempty(ordering)  || length(nanUnique(group)) == 1
     setOrdering = false;
 else
-    assert(length(ordering) == length(nanUnique(group)), ['Ordering ', ...
+    assert(length(ordering) == length(nanUnique(group,false)), ['Ordering ', ...
     'values must be the same length as number of unique Groups']);
     setOrdering = true;
 end
@@ -151,7 +151,11 @@ addpath(pathStruct.gramm)
 %% return spike times relative to each event
 
 if setGroupNames
-    group = categorical(groupNames(group));
+    try
+        group = categorical(groupNames(group));
+    catch
+        group = categorical(group);
+    end
 else
     group = categorical(group);
 end
@@ -214,9 +218,9 @@ if plotType >= 2
     end
     g(1,1).axe_property('YLim',[botYLim Inf]); % Don't allow negative values
     g(1,1).set_title(subTitles(1),...
-        'FontSize', 20);
+        'FontSize', 16);
     g(1,1).set_text_options('base_size', 15,...
-        'label_scaling', 2,...
+        'label_scaling', 1.33,...
         'legend_scaling', 0.8,...
         'legend_title_scaling', 1.2);
     g(1,1).set_names('x','Time (ms)',...
@@ -240,9 +244,9 @@ if plotType == 1 || plotType == 3
     g(yIdx, 1).geom_raster('geom','point');
     g(yIdx, 1).set_point_options('base_size', pointSize);
     g(yIdx, 1).set_title(subTitles(2),...
-        'FontSize', 20);
+        'FontSize', 16);
     g(yIdx,1).set_text_options('base_size', 15,...
-        'label_scaling', 2,...
+        'label_scaling', 1.33,...
         'legend_scaling', 0.8,...
         'legend_title_scaling', 1.2);
     g(yIdx, 1).set_names('x','Time (ms)',...
@@ -258,11 +262,17 @@ if plotType == 1 || plotType == 3
     g(yIdx, 1).set_names('x','Time (ms)','y', 'Trials','color',groupTitle);
 end
 
+% Set title
 g.set_title(figTitle,...
-    'FontSize', 26);
+    'FontSize', 20);
+
+
+% plot into parent panel/axes as needed
 if ~isempty(parent)
     g.set_parent(parent);
 end
+
+% actually draw
 g.draw();
 
 % if zeroLine
@@ -280,13 +290,15 @@ g.draw();
 % Fix axis bugs
 if plotType > 1
     % Get data values
-    allStats = [g(1,1).results.stat_summary.y];
-    yMax = max(max(allStats)).* 1.33;
-    g(1,1).facet_axes_handles.YLim(2) = yMax;
-    if isZScore % create lims when y can be negative
+    try
         allStats = [g(1,1).results.stat_summary.y];
-        yMin = min(min(allStats)).* 1.33;
-        g(1,1).facet_axes_handles.YLim(1) = yMin;
+        yMax = max(max(allStats)).* 1.33;
+        g(1,1).facet_axes_handles.YLim(2) = yMax;
+        if isZScore % create lims when y can be negative
+            allStats = [g(1,1).results.stat_summary.y];
+            yMin = min(min(allStats)).* 1.33;
+            g(1,1).facet_axes_handles.YLim(1) = yMin;
+        end
     end
 end
 
@@ -299,10 +311,16 @@ if nargin < 2
 end
 
   y = unique(x);
-  if any(isnan(y))
-    y(isnan(y)) = []; % remove all nans
-    if keepNaNs
-        y(end+1) = NaN; % add the unique one.
-    end
+  
+  if iscategorical(x)
+      
+      
+  else  
+      if any(isnan(y))
+        y(isnan(y)) = []; % remove all nans
+        if keepNaNs
+            y(end+1) = NaN; % add the unique one.
+        end
+      end
   end
 end

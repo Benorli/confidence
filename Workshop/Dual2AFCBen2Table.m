@@ -11,7 +11,7 @@ assert(isfield(SessionData,'Custom'),'Session Data is not a valid Dual2AFCBen re
 
 %% Grab some initial data 
 
-nTrials = SessionData.Custom.TrialNumber(end);
+nTrials = min(SessionData.Custom.TrialNumber(end),length(SessionData.TrialStartTimestamp));
 
 GUI = [SessionData.TrialSettings.GUI];
 
@@ -76,8 +76,12 @@ for trialI = 1:nTrials
         Custom.ChoiceLeft(trialI),[1,0,nan],{'left','right','no choice'});
     
     completedSampling(trialI) = ~Custom.FixBroke(trialI) && ~Custom.EarlyWithdrawal(trialI);
-    % Are completedSampling and completed ever different?
-    completed(trialI)         = ~Custom.FixBroke(trialI) && ~Custom.EarlyWithdrawal(trialI);
+    % Are completedSampling and completed ever different? Yes, when the
+    % animal doesn't make a choice
+    completed(trialI)         = ~Custom.FixBroke(trialI) && ~Custom.EarlyWithdrawal(trialI) ...
+                              && ~isnan(Custom.ChoiceLeft(trialI));
+    
+    
     
     switch sideChosen(trialI)
         case 'left'
