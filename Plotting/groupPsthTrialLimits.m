@@ -181,7 +181,7 @@ end
 
 botYLim = 0; % Don't allow negative values for non ZScore data
 
-if isZScore 
+if isZScore
     nCellRows = length(binnedSpikes);
     lenPrCell = length(binnedSpikes{1});
     
@@ -194,7 +194,7 @@ if isZScore
     binnedSpikes = mat2cell(binnedSpikes, lenPrCell*ones(nCellRows, 1), 1);
     
     psthYAxisLabel = 'Firing rate (Z-Score)';
-    botYLim = -inf; % allow negative values
+    botYLim = -inf; % allow negative values    
 end
 
 if plotType >= 2
@@ -261,7 +261,9 @@ end
 g.set_title(figTitle,...
     'FontSize', 26);
 if ~isempty(parent)
-    g.set_parent(parent);
+    for j = 1:length(g)
+        g(j).set_parent(parent);
+    end
 end
 g.draw();
 
