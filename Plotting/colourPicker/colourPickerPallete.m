@@ -98,7 +98,8 @@ for iType = 1:numel(types)
             ax2 = axes(...
                 'Units', 'pixels', ...
                 'Position', axpos2);
-            cmap_interp = colorBrews(palettes{iPalette}, NCOL_INTERP);
+%            cmap_interp = colorBrews(palettes{iPalette}, NCOL_INTERP);
+            cmap_interp = colourPicker(palettes{iPalette},NCOL_INTERP);
             image(permute(cmap_interp, [1 3 2]));
             axis off;
         else

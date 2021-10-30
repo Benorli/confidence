@@ -19,96 +19,121 @@ Custom = SessionData.Custom;
 
 %% Get values that have direct correspondence
 
-trialStartTimeBpod  = SessionData.TrialStartTimestamp(1:nTrials)';
+trialStartTimeBpod = SessionData.TrialStartTimestamp(1:nTrials);
+trialStartTimeBpod = trialStartTimeBpod(:);
 
-samplingDuration            = Custom.ST(1:nTrials)';
-catchTrial                  = Custom.CatchTrial(1:nTrials)';
-rewardDelayBpod             = Custom.FeedbackDelay(1:nTrials)';
-preStimulusDelayDuration    = Custom.StimDelay(1:nTrials)';
-waitingTime                 = Custom.FeedbackTime(1:nTrials)';
+samplingDuration            = Custom.ST(1:nTrials);
+samplingDuration            = samplingDuration(:);
+catchTrial                  = Custom.CatchTrial(1:nTrials);
+catchTrial                  = catchTrial(:);
+rewardDelayBpod             = Custom.FeedbackDelay(1:nTrials);
+rewardDelayBpod             = rewardDelayBpod(:);
+preStimulusDelayDuration    = Custom.StimDelay(1:nTrials);
+preStimulusDelayDuration    = preStimulusDelayDuration(:);
+waitingTime                 = Custom.FeedbackTime(1:nTrials);
+waitingTime                 = waitingTime(:);
 rewarded                    = Custom.Rewarded(1:nTrials);
+rewarded                    = rewarded(:);
 
-rewardGrace         = [GUI.FeedbackDelayGrace]; rewardGrace = rewardGrace(1:nTrials)';
-rewardAmountLeft    = [GUI.RewardAmountL]; rewardAmountLeft = rewardAmountLeft(1:nTrials)';
-rewardAmountRight   = [GUI.RewardAmountR]; rewardAmountRight = rewardAmountRight(1:nTrials)';
-stimulusDuration    = [GUI.AuditoryStimulusTime]; stimulusDuration = stimulusDuration(1:nTrials)';
-sumRates            = [GUI.SumRates]; sumRates = sumRates(1:nTrials)';
 
-maximumRewardDelayLeft = [GUI.FeedbackDelayMax]; maximumRewardDelayLeft = maximumRewardDelayLeft(1:nTrials)';
-minimumRewardDelayLeft = [GUI.FeedbackDelayMin]; minimumRewardDelayLeft = minimumRewardDelayLeft(1:nTrials)';
-exponentRewardDelayLeft = [GUI.FeedbackDelayTau]; exponentRewardDelayLeft = exponentRewardDelayLeft(1:nTrials)';
+rewardGrace        = [GUI(1:nTrials).FeedbackDelayGrace]; 
+rewardGrace        = rewardGrace(:);
+rewardAmountLeft   = [GUI(1:nTrials).RewardAmountL]; 
+rewardAmountLeft   = rewardAmountLeft(:);
+rewardAmountRight  = [GUI(1:nTrials).RewardAmountR]; 
+rewardAmountRight  = rewardAmountRight(:);
+stimulusDuration   = [GUI(1:nTrials).AuditoryStimulusTime]; 
+stimulusDuration   = stimulusDuration(:);
+sumRates           = [GUI(1:nTrials).SumRates]; 
+sumRates           = sumRates(:);
 
-maximumRewardDelayRight = [GUI.FeedbackDelayMax]; maximumRewardDelayRight = maximumRewardDelayRight(1:nTrials)';
-minimumRewardDelayRight = [GUI.FeedbackDelayMin]; minimumRewardDelayRight = minimumRewardDelayRight(1:nTrials)';
-exponentRewardDelayRight = [GUI.FeedbackDelayTau]; exponentRewardDelayRight = exponentRewardDelayRight(1:nTrials)';
+maximumRewardDelayLeft  = [GUI(1:nTrials).FeedbackDelayMax]; 
+maximumRewardDelayLeft  = maximumRewardDelayLeft(:);
+minimumRewardDelayLeft  = [GUI(1:nTrials).FeedbackDelayMin]; 
+minimumRewardDelayLeft  = minimumRewardDelayLeft(:);
+exponentRewardDelayLeft = [GUI(1:nTrials).FeedbackDelayTau]; 
+exponentRewardDelayLeft = exponentRewardDelayLeft(:);
+
+maximumRewardDelayRight  = [GUI(1:nTrials).FeedbackDelayMax]; 
+maximumRewardDelayRight  = maximumRewardDelayRight(:);
+minimumRewardDelayRight  = [GUI(1:nTrials).FeedbackDelayMin]; 
+minimumRewardDelayRight  = minimumRewardDelayRight(:);
+exponentRewardDelayRight = [GUI(1:nTrials).FeedbackDelayTau]; 
+exponentRewardDelayRight = exponentRewardDelayRight(:);
 
 % This value is always 1, should this be Custom.AuditoryOmega, which changes every trial
-alpha               = [GUI.AuditoryAlpha]; alpha = alpha(1:nTrials)';
+alpha               = [GUI(1:nTrials).AuditoryAlpha]; 
+alpha = alpha(:);
+
 % Not sure this is correct
-punishGrace = [GUI.FeedbackDelayGrace]; punishGrace = punishGrace(1:nTrials)';
+punishGrace = [GUI(1:nTrials).FeedbackDelayGrace];
+punishGrace = punishGrace(:);
 
 
 %% Calculate correct side per BPod and per actual Clicks
 
-rightClickTrain = Custom.RightClickTrain;
-leftClickTrain  = Custom.LeftClickTrain;
+rightClickTrain = Custom.RightClickTrain(1:nTrials);
+rightClickTrain = rightClickTrain(:);
+leftClickTrain  = Custom.LeftClickTrain(1:nTrials);
+leftClickTrain  = leftClickTrain(:);
+
 
 for trialI = 1:nTrials
-    rightClicksIdx{trialI} = rightClickTrain{trialI} <= Custom.ST(trialI);
-    rightClickCount(trialI) = sum(rightClicksIdx{trialI});
-    rightClickTrainActual{trialI} = ...
+    rightClicksIdx{trialI,1} = rightClickTrain{trialI} <= Custom.ST(trialI);
+    rightClickCount(trialI,1) = sum(rightClicksIdx{trialI});
+    rightClickTrainActual{trialI,1} = ...
         rightClickTrain{trialI}(rightClicksIdx{trialI});
     
-    leftClicksIdx{trialI} = leftClickTrain{trialI} <= Custom.ST(trialI);
-    leftClickCount(trialI) = sum(leftClicksIdx{trialI});
-    leftClickTrainActual{trialI} = ...
+    leftClicksIdx{trialI,1} = leftClickTrain{trialI} <= Custom.ST(trialI);
+    leftClickCount(trialI,1) = sum(leftClicksIdx{trialI});
+    leftClickTrainActual{trialI,1} = ...
         leftClickTrain{trialI}(leftClicksIdx{trialI});
     
-    correctSideBpod(trialI) = categorical(...
+    correctSideBpod(trialI,1) = categorical(...
         length(leftClickTrain{trialI}) > length(rightClickTrain{trialI}),...
-        [1,0],{'left','right'});
+        [1,0],{'left','right'});     
     
-    correctSideClicks(trialI) = categorical(...
+    correctSideClicks(trialI,1) = categorical(...
         length(leftClickTrainActual{trialI}) > length(rightClickTrainActual{trialI}),...
         [1,0],{'left','right'});
     
-    sideChosen(trialI) = categorical(...
+    sideChosen(trialI,1) = categorical(...
         Custom.ChoiceLeft(trialI),[1,0,nan],{'left','right','no choice'});
     
-    completedSampling(trialI) = ~Custom.FixBroke(trialI) && ~Custom.EarlyWithdrawal(trialI);
+    completedSampling(trialI,1) = ~Custom.FixBroke(trialI) && ~Custom.EarlyWithdrawal(trialI);
     % Are completedSampling and completed ever different? Yes, when the
     % animal doesn't make a choice
-    completed(trialI)         = ~Custom.FixBroke(trialI) && ~Custom.EarlyWithdrawal(trialI) ...
+    completed(trialI,1)         = ~Custom.FixBroke(trialI) && ~Custom.EarlyWithdrawal(trialI) ...
                               && ~isnan(Custom.ChoiceLeft(trialI));
     
     
     
     switch sideChosen(trialI)
         case 'left'
-            if correctSideBpod(trialI) == 'right'
-                errorBpod(trialI) = true;
+            if correctSideBpod(trialI,1) == 'right'
+                errorBpod(trialI,1) = true;
             else
-                errorBpod(trialI) = false;
+                errorBpod(trialI,1) = false;
             end
-            if correctSideClicks(trialI) == 'right'
-                errorClicks(trialI) = true;
+            if correctSideClicks(trialI,1) == 'right'
+                errorClicks(trialI,1) = true;
             else
-                errorClicks(trialI) = false;
+                errorClicks(trialI,1) = false;
             end
         case 'right'
-            if correctSideBpod(trialI) == 'left'
-                errorBpod(trialI) = true;
+            if correctSideBpod(trialI,1) == 'left'
+                errorBpod(trialI,1) = true;
             else
-                errorBpod(trialI) = false;
+                errorBpod(trialI,1) = false;
             end
             if correctSideClicks == 'left'
-                errorClicks(trialI) = true;
+                errorClicks(trialI,1) = true;
             else
-                errorClicks(trialI) = false;
+                errorClicks(trialI,1) = false;
             end
         case 'no choice'
-            errorBpod(trialI) = false;
-            errorClicks(trialI) = false;
+            errorBpod(trialI,1) = false;
+            errorClicks(trialI,1) = false;
     end
     
     
@@ -120,15 +145,15 @@ for trialI = 1:nTrials
     switch sideChosen(trialI)
         case 'left'
             if rewarded(trialI)
-                waitingTime(trialI) = (trialStates.rewarded_Lin(end,2) - portEntryTime) + 0.0001;
+                waitingTime(trialI,1) = (trialStates.rewarded_Lin(end,2) - portEntryTime) + 0.0001;
             else
-                waitingTime(trialI) = (trialStates.rewarded_Lin_grace(end,1) - portEntryTime) + 0.0001;
+                waitingTime(trialI,1) = (trialStates.rewarded_Lin_grace(end,1) - portEntryTime) + 0.0001;
             end
         case 'right'
             if rewarded(trialI)
-                waitingTime(trialI) = (trialStates.rewarded_Rin(end,2) - portEntryTime) + 0.0001;
+                waitingTime(trialI,1) = (trialStates.rewarded_Rin(end,2) - portEntryTime) + 0.0001;
             else
-                waitingTime(trialI) = (trialStates.rewarded_Rin_grace(end,1) - portEntryTime) + 0.0001;
+                waitingTime(trialI,1) = (trialStates.rewarded_Rin_grace(end,1) - portEntryTime) + 0.0001;
             end
     end
   
@@ -141,20 +166,20 @@ sideChosen = sideChosen(:);
 completed  = completed(:);
 rewarded   = rewarded(:);
 
-correctSideChosenClicks = correctSideClicks' == sideChosen;
+correctSideChosenClicks = correctSideClicks == sideChosen;
 % correctSideChosenClicks(sideChosen == 'no choice') = nan;
 
-correctSideChosenBpod   = correctSideBpod'   == sideChosen;
+correctSideChosenBpod   = correctSideBpod   == sideChosen;
 % correctSideChosenBpod(sideChosen == 'no choice') = nan;
 
-completedCatchTrial = Custom.CatchTrial(1:nTrials)' & completed;
+completedCatchTrial = catchTrial & completed;
 
 correctCatchEvidenceClicks  = correctSideChosenClicks & catchTrial;
-errorCatchEvidenceClicks    = errorClicks' & catchTrial;
+errorCatchEvidenceClicks    = errorClicks & catchTrial;
 correctLeftChoiceClicks     = correctSideChosenClicks & sideChosen == 'left';
 correctRightChoiceClicks    = correctSideChosenClicks & sideChosen == 'right';
-errorLeftChoiceClicks       = errorClicks' & sideChosen == 'left';
-errorRightChoiceClicks      = errorClicks' & sideChosen == 'right';
+errorLeftChoiceClicks       = errorClicks & sideChosen == 'left';
+errorRightChoiceClicks      = errorClicks & sideChosen == 'right';
 
 highEvidenceSideBpod   = correctSideBpod(:);
 highEvidenceSideClicks = correctSideClicks(:);
@@ -167,6 +192,21 @@ completedSampling = completedSampling(:);
 
 leftSampledClicks  = leftClickTrainActual(:);
 rightSampledClicks = rightClickTrainActual(:);
+
+%% Force some variables into columns
+correctSideBpod             = correctSideBpod(:);
+correctSideClicks           = correctSideClicks(:);
+errorClicks                 = errorClicks(:);
+leftClickCount              = leftClickCount(:);
+leftClicksIdx               = leftClicksIdx(:);
+leftClickTrainActual        = leftClickTrainActual(:); 
+preStimulusDelayDuration    = preStimulusDelayDuration(:);
+rewardDelayBpod             = rewardDelayBpod(:);
+rightClickCount             = rightClickCount(:);
+rightClicksIdx              = rightClicksIdx(:);
+rightClickTrainActual       = rightClickTrainActual(:);
+waitingTime                 = waitingTime(:);
+
 %% Create Table
 
 % This is currently just every table column from the existing table used
