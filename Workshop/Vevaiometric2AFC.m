@@ -100,7 +100,7 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
     trialTypes(~Catch & Correct & ~Rewarded) = "Correct RDO";
     trialTypes(Catch & ~Correct) = "Error Catch";
     trialTypes(~Catch & ~Correct) = "Error";
-    trialTypes(Rewarded) = "Rewarded";
+    trialTypes(find(Rewarded)) = "Rewarded";
     trialTypes = cellstr(trialTypes(:));
     
     % Prepare Gramm Data

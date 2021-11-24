@@ -65,8 +65,10 @@ function [handle] = dropOuts2AFC(highEvidenceSide, chosenSide,...
     cmap = cmap([4 7],:);    
     g = gramm('x',xData,'y',yData,'color',cData);
     g.stat_summary('bin_in',nBins,...
-       'geom',{'line','errorbar'});
+       'geom',{'bar','errorbar'});
             
+    % g.stat_bin('normalization','probability');
+
     if ~isempty(titleString)
         g.set_title(titleString);
     end

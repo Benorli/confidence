@@ -96,6 +96,7 @@ for j = 1:length(unique(leaveGroups))
     leavePrcStats(j) = calculateResponse(T, spikeTimes, ...
         leaveTrials(leaveGroups == j), binSize, smoothData);
 end
+
 % Rewarded Trials - Raw
 rewardStats = calculateResponse(T, spikeTimes, rewardTrials, binSize, smoothData);
 % Rewarded trials - Percentiles
@@ -103,9 +104,6 @@ for j = 1:length(unique(rewardGroups))
     rewardPrcStats(j) = calculateResponse(T, spikeTimes, ...
         rewardTrials(rewardGroups == j), binSize, smoothData);
 end
-
-
-
 
 %% Per trial analysis
 
@@ -223,6 +221,9 @@ waitingTime      = T.waitingTime(trials);
 % Convert to matrix
 binnedSpikes = reshape(cell2mat(binnedSpikes),length(binCenters),length(binnedSpikes))';
 
+
+
+
 % Remove timepoints that have less than 10 trials included
 trialsIncluded = sum(~isnan(binnedSpikes));
 points2Remove = find(trialsIncluded<4);
@@ -251,14 +252,17 @@ preMinFR = meanFR(prePeakMinIdx);
 % find FR minimum post peak
 [postMinFR,postPeakMinIdx] = min(meanFR(peakIdx:end));
 postPeakMinIdx = postPeakMinIdx + peakIdx - 1;
-% Simple Slopes
+
+%% Slope Calculations
+% Simple Slope Calculation
 preSlope  = (peakFR - preMinFR)./...
     ((peakTime - binCenters(prePeakMinIdx))./1000);
 postSlope = (postMinFR - peakFR) ./ ...
     ((binCenters(postPeakMinIdx) - peakTime)./1000);
 
-% Complicated slope - linear fit across different time scales and see where
-%                     fit changes
+%% More Complex Slope Calculation
+% linear fit across different time scales and see where fit changes
+                   
 fitEnds = prePeakMinIdx+1:postPeakMinIdx-1;
 for timeI = 1:length(fitEnds)
     [preLinFit(timeI,:),S] = polyfit(binCenters(prePeakMinIdx:fitEnds(timeI))./1000,...
@@ -276,6 +280,30 @@ fitPreSlope  = preLinFit(bestFitIdx,:);
 fitPostSlope = postLinFit(bestFitIdx,:);
 fitPeakTime  = binCenters(fitEnds(bestFitIdx));
 fitPeakFR    = meanFR(fitEnds(bestFitIdx));
+
+%% Polynomial fitting using the best sliding linear fit 
+% 
+% x = binCenters(prePeakMinIdx:peakIdx)./1000;
+% x = x(:);
+% smoothY = smooth(meanFR(prePeakMinIdx:peakIdx),5);
+% smoothY = smoothY(:);
+% 
+% f = figure; ax = axes(f); hold(ax,'on');    
+% plot(x, smoothY,...
+%         'LineWidth',2,'color','k');    
+% for polyOrder = 1:12
+%     [cE{polyOrder}, S(polyOrder)] = polyfit(x,smoothY,polyOrder);
+%     y{polyOrder} = polyval(cE{polyOrder}, x, S(polyOrder));
+%     plot(x, y{polyOrder});   
+% end
+% 
+% hold(ax,'off');
+
+
+
+
+%% Assign data
+
 
 results.meanFR          = meanFR;
 results.X               = binCenters;

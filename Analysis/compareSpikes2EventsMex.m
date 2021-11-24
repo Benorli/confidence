@@ -70,7 +70,7 @@ occurringEvents = find(~isnan(sortedEventTimes))';
 assert(~isempty(occurringEvents), ['No events occured, eventTimes ',...
     'contained only NaNs'])
 nEvents = length(eventTimes);
-nEventsOccured = length(occurringEvents);
+% nEventsOccured = length(occurringEvents);
 
 spikeTimesFromEvent = cell(nEvents, 1);
 
@@ -79,7 +79,7 @@ spikeTimesFromEvent = cell(nEvents, 1);
 spikeTimes(spikeTimes < min(eventTimes)-prev | ... 
        spikeTimes > max(eventTimes)+post) = [];
                 
-for i = 1:nEventsOccured        
+for i = occurringEvents    
     % Check if the trial start provided is within the window
     if trialLimits(i) > eventTimes(i)
         prevLimit = prev;
