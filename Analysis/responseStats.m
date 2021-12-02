@@ -8,19 +8,27 @@ function [responseData, statsFig] = responseStats(varargin)
 % Generate with 'preProcessSessionData' or 'parseIntanSessionData'
 % Optional Parameters:
 %       BinSize: Width of bins to use for PSTH based statistics    
-%       Smooth: Logical, whether to smooth data for PSTH stats
+%       GaussSize: SD of gaussian kernel to smooth data
+%       Smooth: Logical, whether to further smooth data (moving average) for PSTH stats
 %       Plot: Logical, whether to make plots of data
-%       Percentiles : Divisions in WT to use for stats 
+%       Split : Method to split the WT: 'Percentile','Seconds'; default =
+%       'Percentile'
+%       Percentiles : Divisions in WT to use for splits, only used if split
+%       method is 'Percentile'
+
 
 %% Input parsing
 p = inputParser; % Create object of class 'inputParser'
 % define defaults
-defBinSize     = 100;  % in ms
+defBinSize     = 2; % in ms
+defGauss       = 8; % in ms
 defSmooth      = false; % Smooth data
 defPlot        = false; % Plot data
-defPercentile  = [0 50 100]; 
+defPercentile  = [0 33 66 100]; 
 defParent      = [];
 defSpikeTrials = [];
+defOutliers    = true;
+defSplit       = 'Percentile';
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -35,26 +43,35 @@ valPercentile = @(x) validateattributes(x, {'numeric'},...
     {'row','nonempty','>=', 0, '<=', 100,'increasing'});
 valBinaryCol = @(x) validateattributes(x, {'logical', 'numeric'},...
     {'nonempty', 'binary', 'column'});
-    
+valSplit = @(x) validateattributes(x, {'char', 'string', 'cell'},...
+     {'nonempty'});
+ 
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'T', valTable);
 addParameter(p, 'BinSize', defBinSize, valNumScalarNonEmpty);
+addParameter(p, 'GaussSize', defGauss, valNumScalarNonEmpty);
 addParameter(p, 'Smooth', defSmooth, valBinaryScalar);
 addParameter(p, 'Plot', defPlot, valBinaryScalar);
 addParameter(p, 'Parent', defParent, @ishandle);
-addParameter(p, 'Percentile', defPercentile, valPercentile);
 addParameter(p, 'SpikeTrials', defSpikeTrials, valBinaryCol);
+addParameter(p, 'Outliers', defOutliers,@islogical);
+addParameter(p, 'Split', defSplit, valSplit);
+addParameter(p, 'Percentile', defPercentile, valPercentile);
 
 parse(p, varargin{:});
 
 spikeTimes  = p.Results.spikeTimes; 
 T           = p.Results.T;
 binSize     = p.Results.BinSize;
+gaussSize   = p.Results.GaussSize;
 drawPlot    = p.Results.Plot;
 smoothData  = p.Results.Smooth;
-percentiles = p.Results.Percentile;
 parent      = p.Results.Parent;
 spikeTrials = p.Results.SpikeTrials;
+outliers    = p.Results.Outliers;
+percentiles = p.Results.Percentile;
+splitType = validatestring(p.Results.Split,{'Percentile','Seconds'});
+
 
 clear p
 
@@ -76,33 +93,57 @@ rewardTrials = find(T.rewarded & spikeTrials);
 rewardTimes  = [T.trialEndTime(rewardTrials), ...
                 T.waitingStartTime(rewardTrials)] ...
              +  T.ephysTrialStartTime(rewardTrials);   
-rewardSplits = prctile(T.waitingTime(rewardTrials),percentiles);
-rewardGroups = discretize(T.waitingTime(rewardTrials),rewardSplits);
-
+         
 % Unrewarded Trials
 leaveTrials  = find(T.selfExit & spikeTrials);
 leaveTimes  = [T.trialEndTime(leaveTrials), ...
                 T.waitingStartTime(leaveTrials)] ...
              +  T.ephysTrialStartTime(leaveTrials);   
-leaveSplits = prctile(T.waitingTime(leaveTrials),percentiles);
-leaveGroups = discretize(T.waitingTime(leaveTrials),leaveSplits);
+
+
+% Remove outliers here if option is selected         
+% if ~outliers
+%     outlierGroups = discretize(
+%     [~, trials2Remove] = rmoutliers(T.waitingTime(rewardTrials));
+%     rewardTrials(trials2Remove) = [];     
+% end         
+         
+switch splitType
+    case 'Percentile'
+        rewardSplits = prctile(T.waitingTime(rewardTrials),percentiles);
+        leaveSplits = prctile(T.waitingTime(leaveTrials),percentiles);
+    case 'Seconds'
+        rewardSplits = floor(min(T.waitingTime(rewardTrials))):1:...
+                       ceil(max(T.waitingTime(rewardTrials))); 
+        leaveSplits = floor(min(T.waitingTime(leaveTrials))):1:...
+                       ceil(max(T.waitingTime(leaveTrials)));          
+end
+
+rewardGroups = discretize(T.waitingTime(rewardTrials),rewardSplits);
+leaveGroups  = discretize(T.waitingTime(leaveTrials),leaveSplits);
+
         
 %% Statistical Analysis
 
 % Leave trials - Raw
-leaveStats = calculateResponse(T, spikeTimes, leaveTrials, binSize, smoothData);
+leaveStats = calculateResponse(T, spikeTimes, leaveTrials, binSize, gaussSize, false);
 % Leave trials - Percentiles
-for j = 1:length(unique(leaveGroups))
-    leavePrcStats(j) = calculateResponse(T, spikeTimes, ...
-        leaveTrials(leaveGroups == j), binSize, smoothData);
+for j = 1:length(unique(leaveGroups))    
+    % Check there are more than 8 trials in group
+    if sum(leaveGroups ==j) < 8
+        continue
+    else    
+        leavePrcStats(j) = calculateResponse(T, spikeTimes, ...
+            leaveTrials(leaveGroups == j), binSize, gaussSize, false);
+    end
 end
 
 % Rewarded Trials - Raw
-rewardStats = calculateResponse(T, spikeTimes, rewardTrials, binSize, smoothData);
+rewardStats = calculateResponse(T, spikeTimes, rewardTrials, binSize, gaussSize, true);
 % Rewarded trials - Percentiles
 for j = 1:length(unique(rewardGroups))
     rewardPrcStats(j) = calculateResponse(T, spikeTimes, ...
-        rewardTrials(rewardGroups == j), binSize, smoothData);
+        rewardTrials(rewardGroups == j), binSize, gaussSize, true);
 end
 
 %% Per trial analysis
@@ -110,12 +151,20 @@ end
 leaveTrialResponse  = trialResponse(T, spikeTimes, leaveTrials, leaveStats.PeakTime);
 rewardTrialResponse = trialResponse(T, spikeTimes, rewardTrials, rewardStats.PeakTime);
 for j = 1:length(unique(leaveGroups))
-    leavePrcTrialResponse(j) = trialResponse(T, spikeTimes, ...
-        leaveTrials(leaveGroups == j), leavePrcStats(j).PeakTime);
+    if sum(leaveGroups ==j) < 8
+        continue
+    else    
+        leavePrcTrialResponse(j) = trialResponse(T, spikeTimes, ...
+            leaveTrials(leaveGroups == j), leavePrcStats(j).PeakTime);
+    end
 end
 for j = 1:length(unique(rewardGroups))
-    rewardPrcTrialResponse(j) = trialResponse(T, spikeTimes, ...
-        rewardTrials(rewardGroups == j), rewardPrcStats(j).PeakTime);
+    if sum(leaveGroups ==j) < 8
+        continue
+    else 
+        rewardPrcTrialResponse(j) = trialResponse(T, spikeTimes, ...
+            rewardTrials(rewardGroups == j), rewardPrcStats(j).PeakTime);
+    end
 end
 
 
@@ -138,15 +187,23 @@ if drawPlot
     % generate legend text
     legends{1} = 'All trials';
     
-    for prcI = 1:length(percentiles) - 1
-        if percentiles(prcI) == 0
-            legends{prcI+1} = ['WT <= ' num2str(percentiles(prcI+1)) '%'];
-        else
-            legends{prcI+1} = ['WT ' num2str(percentiles(prcI)) ...
-                                ' - ' num2str(percentiles(prcI+1)) '%'];
-        end  
-    end
-    
+     switch splitType
+            case 'Percentile'
+                for prcI = 1:length(percentiles) - 1
+                    if percentiles(prcI) == 0
+                        legends{prcI+1} = ['WT <= ' num2str(percentiles(prcI+1)) '%'];
+                    else
+                        legends{prcI+1} = ['WT ' num2str(percentiles(prcI)) ...
+                                            ' - ' num2str(percentiles(prcI+1)) '%'];
+                    end  
+                end
+            case 'Seconds'
+                for legI = 1:length(rewardSplits) - 1
+                    legends{legI+1} = [num2str(rewardSplits(legI)) ' - ' ...
+                        num2str(rewardSplits(legI+1)) ' s'];
+                end
+    end        
+
     cmap = colourPicker('Paired');
     
     statsFig = figure;
@@ -162,9 +219,9 @@ if drawPlot
     hold(leaveAx,'on');
     leavePlots = plotResponseStats(leaveAx, leaveStats, ...
         'Legend', legends{1});
-    for prcI = 1:length(percentiles) - 1
-        leavePlots(prcI+1) = plotResponseStats(leaveAx, leavePrcStats(prcI),...
-            'color',cmap([1:2] + ((prcI-1)*2),:),'Legend',legends{prcI+1});     
+    for legI = 1:length(legends) - 1
+        leavePlots(legI+1) = plotResponseStats(leaveAx, leavePrcStats(legI),...
+            'color',cmap([1:2] + ((legI-1)*2),:),'Legend',legends{legI+1});     
     end   
     hold(leaveAx,'off');
   
@@ -173,9 +230,9 @@ if drawPlot
     hold(rewardAx,'on');
     rewardPlots = plotResponseStats(rewardAx, rewardStats, ...
         'Legend', legends{1});
-    for prcI = 1:length(percentiles) - 1
-        rewardPlots(prcI+1) = plotResponseStats(rewardAx, rewardPrcStats(prcI),... 
-        'color',cmap([1:2] + ((prcI-1)*2),:),'Legend',legends{prcI+1});
+    for legI = 1:length(percentiles) - 1
+        rewardPlots(legI+1) = plotResponseStats(rewardAx, rewardPrcStats(legI),... 
+        'color',cmap([1:2] + ((legI-1)*2),:),'Legend',legends{legI+1});
     end   
     hold(rewardAx,'off');
   
@@ -206,80 +263,187 @@ end % end if drawPlot
 
 end % End main responseStats function 
 
-function results = calculateResponse(T, spikeTimes, trials, binSize, smoothData)
+function results = calculateResponse(T, spikeTimes, trials, binSize, gaussSize, zeroEnd)
+
+if nargin < 6
+    zeroEnd = false;
+end
 
 % Gather needed info
 waitingTimeStart = T.waitingStartTime(trials) + T.ephysTrialStartTime(trials);
 waitingTimeEnd   = T.trialEndTime(trials) + T.ephysTrialStartTime(trials);
 waitingTime      = T.waitingTime(trials);
 
+
+%% Find point where ramping stops
+% Want to estimate the point where the firing rate starts decreasing
+% Will use a small bin size and then smooth the data with gaussian kernel
+% Will then  find the point where the data changes the most:
+% this will be roughly the middle of the line where it drop to zero
+% Then find the first peak before this and the first (negative peak after
+% this) to get get start and end of the end of the ramp.
+
 % Get Binned Spikes
 [binnedSpikes, binCenters] = binSpikesPerEventMex(spikeTimes, waitingTimeEnd,...
     'Previous', max(waitingTime).*1000,'Post', 1000,...
     'TrialLimits',waitingTimeStart,'BinSize', binSize);
-
 % Convert to matrix
 binnedSpikes = reshape(cell2mat(binnedSpikes),length(binCenters),length(binnedSpikes))';
+ 
+% Gaussian convolution
+nanPositions = isnan(binnedSpikes);
+gaussSpikes = binnedSpikes;
+gaussSpikes(nanPositions) = 0;
 
+mu  = 0; 
+gaussKernel = normpdf(-5*gaussSize:1:5*gaussSize, mu, gaussSize);
 
-
-
-% Remove timepoints that have less than 10 trials included
-trialsIncluded = sum(~isnan(binnedSpikes));
-points2Remove = find(trialsIncluded<4);
-if any(find(diff(sign(diff(points2Remove)))))
-    warning('There are discontinuities in the trials 2 remove...')
+for j = 1:size(binnedSpikes,1)
+    gaussSpikes(j,:)   = conv(binnedSpikes(j,:),gaussKernel,'same'); % convolve with gaussian window
+end
+    
+gaussSpikes(nanPositions) = nan;
+    
+% Remove timepoints that have less than 8 trials included
+trialsIncluded = sum(~isnan(gaussSpikes));
+points2Keep = find(trialsIncluded >= 8);
+if any(find(diff(sign(diff(points2Keep)))))
+    warning('There are discontinuities in the trials 2 keep...')
     % TODO: Add more sophisticated discontinuity checking here
 end
-binnedSpikes(:,points2Remove) = [];
-binCenters(:,points2Remove) = [];
+gaussSpikes = gaussSpikes(:,points2Keep);
+gaussCenters = binCenters(:,points2Keep);
 
 % Find average firing rate
-meanFR = nanmean(binnedSpikes);
+meanFR = nanmean(gaussSpikes);
 % Find 95% CI (Copied from gramm stat_summary function)
 alfa = 0.05;
-ciFR=tinv(1-alfa/2,sum(~isnan(binnedSpikes))-1).*nanstd(binnedSpikes)...
-    ./sqrt(sum(~isnan(binnedSpikes)));
+ciFR=tinv(1-alfa/2,sum(~isnan(gaussSpikes))-1).*nanstd(gaussSpikes)...
+    ./sqrt(sum(~isnan(gaussSpikes)));
 
-% Find FR peak
-[~, peakIdx] = max(meanFR);
+% Find FR peak 
+if zeroEnd % Just use 0 bin as the 'peak' firing, i.e. for rewarded trials
+    peakIdx = dsearchn(gaussCenters(:),0);
+else    
+    [~, peakIdx] = max(meanFR);
+end
+
 peakFR   = meanFR(peakIdx);
-peakTime = binCenters(peakIdx);
+peakTime = gaussCenters(peakIdx);
 % find FR minimum (or the latest 0 point prior to the peak)
 [~,preMinFRIdx] = min(meanFR(1:peakIdx));
 prePeakMinIdx = max([1 find(meanFR(1:peakIdx) == 0) preMinFRIdx]);
 preMinFR = meanFR(prePeakMinIdx);
+% Define an alternate minimum as 0 Hz at the longest trial 
+% maybe should be median trial for this time group?
+prePeakZeroIdx = 1;
+prePeakZeroFR  = 0;
+
+
 % find FR minimum post peak
 [postMinFR,postPeakMinIdx] = min(meanFR(peakIdx:end));
 postPeakMinIdx = postPeakMinIdx + peakIdx - 1;
 
+%% Find change point and peak before and trough after
+
+if zeroEnd % Find the peak closest to the 0 point
+    prePeakFR  = peakFR;
+    prePeakIdx = peakIdx;
+    prePeakTime = gaussCenters(prePeakIdx);
+
+   [postTroughFR, postTroughIdx] = min(meanFR(peakIdx:end));
+   postTroughIdx = postTroughIdx + (peakIdx - 1);
+   postTroughTime = gaussCenters(postTroughIdx);
+else   
+    changePoint = findchangepts(meanFR,'Statistic','linear');
+
+    prePeakDistance = peakFR; % We will try gey the distance between our detected
+    % peak and the true maximum below a threshold, as a way avoid false peaks 
+    peakRange = 1;
+
+    while prePeakDistance > 0.1 * peakFR
+
+        [prePeakFR,prePeakIdx] = findpeaks(fliplr(meanFR(1:changePoint)),...
+                              'NPeaks',peakRange);
+        prePeakFR  = prePeakFR(peakRange);
+        prePeakIdx = prePeakIdx(peakRange); 
+
+        timepoints = fliplr(gaussCenters(1:changePoint));                      
+        prePeakTime = timepoints(prePeakIdx);
+        prePeakIdx  = changePoint - (prePeakIdx - 1);
+
+        peakRange = peakRange + 1;
+        prePeakDistance = abs(prePeakFR - peakFR);
+    end
+    [postTroughFR,postTroughTime] = findpeaks(-meanFR(changePoint:end),...
+                                gaussCenters(changePoint:end),'NPeaks',1);
+    postTroughFR = -postTroughFR;
+    postTroughIdx = dsearchn(gaussCenters(:),postTroughTime);
+end
+
+%% Optional Plotting
+%     f = figure;
+%     ax = axes(f);
+%     grid(ax,'on');
+%     hold(ax,'on');
+%     plot(ax, gaussCenters, meanFR,'k','lineWidth',1);
+%     scatter(ax, gaussCenters(changePoint),meanFR(changePoint),25,'ko','filled');
+%     scatter(ax, gaussCenters(prePeakIdx),meanFR(prePeakIdx),25,'g^','filled');
+%     scatter(ax, gaussCenters(postTroughIdx),meanFR(postTroughIdx),25,'rv','filled');
+% 
+%     % scatter(ax, gaussCenters(peakIdx),meanFR(peakIdx),25,'g^');
+% 
+%     % Also plot a smoother binned spikes
+%     % Get Binned Spikes
+%     [binnedSpikes, binCenters] = binSpikesPerEventMex(spikeTimes, waitingTimeEnd,...
+%         'Previous', max(waitingTime).*1000,'Post', 1000,...
+%         'TrialLimits',waitingTimeStart,'BinSize', 50);
+% 
+%     % Convert to matrix
+%     binnedSpikes = reshape(cell2mat(binnedSpikes),length(binCenters),length(binnedSpikes))';
+% 
+%     plot(ax, binCenters, nanmean(binnedSpikes),'k--','lineWidth',1);
+% 
+%     hold(ax,'off');
+
 %% Slope Calculations
 % Simple Slope Calculation
-preSlope  = (peakFR - preMinFR)./...
-    ((peakTime - binCenters(prePeakMinIdx))./1000);
-postSlope = (postMinFR - peakFR) ./ ...
-    ((binCenters(postPeakMinIdx) - peakTime)./1000);
+% preSlope  = (prePeakFR - preMinFR)./...
+%     ((prePeakTime - gaussCenters(prePeakMinIdx))./1000);
+% postSlope = (postTroughFR - prePeakFR) ./ ...
+%     ((gaussCenters(postTroughIdx) - prePeakTime)./1000);
+
+%% Slightly More Complex Slope Calculation
+
+preLinFit  = polyfit([gaussCenters(prePeakZeroIdx) gaussCenters(prePeakMinIdx:prePeakIdx)]./1000,...
+                    [0 meanFR(prePeakMinIdx:prePeakIdx)],1);
+preSlope   = preLinFit(1); 
+
+postLinFit = polyfit(gaussCenters(prePeakIdx:postTroughIdx)./1000,...
+                     meanFR(prePeakIdx:postTroughIdx),1);
+postSlope  = postLinFit(1);
+
 
 %% More Complex Slope Calculation
 % linear fit across different time scales and see where fit changes
                    
-fitEnds = prePeakMinIdx+1:postPeakMinIdx-1;
-for timeI = 1:length(fitEnds)
-    [preLinFit(timeI,:),S] = polyfit(binCenters(prePeakMinIdx:fitEnds(timeI))./1000,...
-                                  meanFR(prePeakMinIdx:fitEnds(timeI)),1);
-    preNorm(timeI) = S.normr;
-    [postLinFit(timeI,:),S] = polyfit(binCenters(fitEnds(timeI):postPeakMinIdx)./1000,...
-                                  meanFR(fitEnds(timeI):postPeakMinIdx),1);
-    postNorm(timeI) = S.normr;
-             
-    totalNorm = preNorm+postNorm;
-end
-
-[~,bestFitIdx] = min(totalNorm);
-fitPreSlope  = preLinFit(bestFitIdx,:);
-fitPostSlope = postLinFit(bestFitIdx,:);
-fitPeakTime  = binCenters(fitEnds(bestFitIdx));
-fitPeakFR    = meanFR(fitEnds(bestFitIdx));
+% fitEnds = prePeakMinIdx+1:postTroughIdx-1;
+% for timeI = 1:length(fitEnds)
+%     [preLinFit(timeI,:),S] = polyfit(gaussCenters(prePeakMinIdx:fitEnds(timeI))./1000,...
+%                                   meanFR(prePeakMinIdx:fitEnds(timeI)),1);
+%     preNorm(timeI) = S.normr;
+%     [postLinFit(timeI,:),S] = polyfit(gaussCenters(fitEnds(timeI):postPeakMinIdx)./1000,...
+%                                   meanFR(fitEnds(timeI):postPeakMinIdx),1);
+%     postNorm(timeI) = S.normr;
+%              
+%     totalNorm = preNorm+postNorm;
+% end
+% 
+% [~,bestFitIdx] = min(totalNorm);
+% fitPreSlope  = preLinFit(bestFitIdx,:);
+% fitPostSlope = postLinFit(bestFitIdx,:);
+% fitPeakTime  = gaussCenters(fitEnds(bestFitIdx));
+% fitPeakFR    = meanFR(fitEnds(bestFitIdx));
 
 %% Polynomial fitting using the best sliding linear fit 
 % 
@@ -300,92 +464,94 @@ fitPeakFR    = meanFR(fitEnds(bestFitIdx));
 % hold(ax,'off');
 
 
-
-
 %% Assign data
 
-
 results.meanFR          = meanFR;
-results.X               = binCenters;
+results.X               = gaussCenters;
 results.ciFR            = ciFR;
-results.Peak            = peakFR;
-results.PeakTime        = peakTime;
+results.Peak            = prePeakFR;
+results.PeakTime        = prePeakTime;
 results.PreMin          = meanFR(prePeakMinIdx);
-results.PreMinTime      = binCenters(prePeakMinIdx);
+results.PreMinTime      = gaussCenters(prePeakMinIdx);
 results.PreSlope        = preSlope;
-results.PostMin         = meanFR(postPeakMinIdx);
-results.PostMinTime     = binCenters(postPeakMinIdx);
+results.PreSlopeFit     = preLinFit;
+
+results.PostMin         = meanFR(postTroughIdx);
+results.PostMinTime     = gaussCenters(postTroughIdx);
 results.PostSlope       = postSlope;
-results.FitPeak         = fitPeakFR;
-results.FitPeakTime     = fitPeakTime;
-results.FitPreSlope     = fitPreSlope;
-results.FitPostSlope    = fitPostSlope;
+results.PostSlopeFit    = postLinFit;
 
-% Calculate for smoothed data?
-if smoothData
-    binSize = 25;
-    % Get Binned Spikes
-    [binnedSpikes, binCenters] = binSpikesPerEventMex(spikeTimes, waitingTimeEnd,...
-    'Previous', max(waitingTime).*1000,'Post', 1000,...
-    'TrialLimits',waitingTimeStart,'BinSize', binSize);
 
-    % Convert to matrix
-    binnedSpikes = reshape(cell2mat(binnedSpikes),length(binCenters),length(binnedSpikes))';
+% results.FitPeak         = fitPeakFR;
+% results.FitPeakTime     = fitPeakTime;
+% results.FitPreSlope     = fitPreSlope;
+% results.FitPostSlope    = fitPostSlope;
 
-    % Remove timepoints that have less than 10 trials included
-    trialsIncluded = sum(~isnan(binnedSpikes));
-    points2Remove = find(trialsIncluded<4);
-    if any(find(diff(sign(diff(points2Remove)))))
-        warning('There are discontinuities in the trials 2 remove...')
-        % TODO: Add more sophisticated discontinuity checking here
-    end
-    binnedSpikes(:,points2Remove) = [];
-    binCenters(:,points2Remove) = [];
-    
-    % smooth individual trials
-    span = 500/binSize; % 500 ms moving average
-    for j = 1:size(binnedSpikes,1)
-        binnedSpikes(j,:) = movmean(binnedSpikes(j,:), span, 'omitnan');
-    end
-    smoothFR = nanmean(binnedSpikes);
-    
-    % Find 95% CI (Copied from gramm stat_summary function)
-    alfa = 0.05;
-    ciFRSm=tinv(1-alfa/2,sum(~isnan(binnedSpikes))-1).*nanstd(binnedSpikes)...
-        ./sqrt(sum(~isnan(binnedSpikes)));
-    % Replace any values below 0
-    smoothFR(smoothFR < 0) = 0;
-
-    % Find FR peak
-    [~, peakIdxSm] = max(smoothFR);
-    
-    % Alternative method
-%     peakTimeSm = binCenters(peakIdxSm);
-%     altPeakIdxSm  = findchangepts(smoothFR);
-%     altPeakTimeSm    = binCenters(altPeakIdxSm);
-%     % find which one is closer to zero
-%     [~, minIdx] = min([abs(peakTimeSm) abs(altPeakTimeSm)]);
-%     if minIdx == 2
-%         peakIdxSm = altPeakIdxSm;
+% % Calculate for smoothed data?
+% if smoothData
+%     binSize = 25;
+%     % Get Binned Spikes
+%     [binnedSpikes, binCenters] = binSpikesPerEventMex(spikeTimes, waitingTimeEnd,...
+%     'Previous', max(waitingTime).*1000,'Post', 1000,...
+%     'TrialLimits',waitingTimeStart,'BinSize', binSize);
+% 
+%     % Convert to matrix
+%     binnedSpikes = reshape(cell2mat(binnedSpikes),length(binCenters),length(binnedSpikes))';
+% 
+%     % Remove timepoints that have less than 10 trials included
+%     trialsIncluded = sum(~isnan(binnedSpikes));
+%     points2Remove = find(trialsIncluded<4);
+%     if any(find(diff(sign(diff(points2Remove)))))
+%         warning('There are discontinuities in the trials 2 remove...')
+%         % TODO: Add more sophisticated discontinuity checking here
 %     end
-    peakFRSm   = smoothFR(peakIdxSm);
-    peakTimeSm = binCenters(peakIdxSm);
-
-    % find FR minimum (or the latest 0 point prior to the peak)
-    [minFRSm,minFRSmIdx] = min(smoothFR(1:peakIdx));
-    zeroPointSmIdx = max([1 ; find(smoothFR(1:peakIdx) == 0)'; minFRSmIdx]);
-    slopeSm = peakFRSm./((peakTimeSm - binCenters(zeroPointSmIdx))./1000);
-    
-    results.smoothFR       = smoothFR;
-    results.smoothX        = binCenters;
-    results.smoothFRci     = ciFRSm;
-    results.smoothPeak     = peakFRSm;
-    results.smoothPeakTime = peakTimeSm;
-    results.smoothMin      = smoothFR(zeroPointSmIdx);
-    results.smoothMinTime  = binCenters(zeroPointSmIdx);
-    results.smoothSlope    = slopeSm;
-
-end % End if smoothData
+%     binnedSpikes(:,points2Remove) = [];
+%     binCenters(:,points2Remove) = [];
+%     
+%     % smooth individual trials
+%     span = 500/binSize; % 500 ms moving average
+%     for j = 1:size(binnedSpikes,1)
+%         binnedSpikes(j,:) = movmean(binnedSpikes(j,:), span, 'omitnan');
+%     end
+%     smoothFR = nanmean(binnedSpikes);
+%     
+%     % Find 95% CI (Copied from gramm stat_summary function)
+%     alfa = 0.05;
+%     ciFRSm=tinv(1-alfa/2,sum(~isnan(binnedSpikes))-1).*nanstd(binnedSpikes)...
+%         ./sqrt(sum(~isnan(binnedSpikes)));
+%     % Replace any values below 0
+%     smoothFR(smoothFR < 0) = 0;
+% 
+%     % Find FR peak
+%     [~, peakIdxSm] = max(smoothFR);
+%     
+%     % Alternative method
+% %     peakTimeSm = binCenters(peakIdxSm);
+% %     altPeakIdxSm  = findchangepts(smoothFR);
+% %     altPeakTimeSm    = binCenters(altPeakIdxSm);
+% %     % find which one is closer to zero
+% %     [~, minIdx] = min([abs(peakTimeSm) abs(altPeakTimeSm)]);
+% %     if minIdx == 2
+% %         peakIdxSm = altPeakIdxSm;
+% %     end
+%     peakFRSm   = smoothFR(peakIdxSm);
+%     peakTimeSm = binCenters(peakIdxSm);
+% 
+%     % find FR minimum (or the latest 0 point prior to the peak)
+%     [minFRSm,minFRSmIdx] = min(smoothFR(1:peakIdx));
+%     zeroPointSmIdx = max([1 ; find(smoothFR(1:peakIdx) == 0)'; minFRSmIdx]);
+%     slopeSm = peakFRSm./((peakTimeSm - binCenters(zeroPointSmIdx))./1000);
+%     
+%     results.smoothFR       = smoothFR;
+%     results.smoothX        = binCenters;
+%     results.smoothFRci     = ciFRSm;
+%     results.smoothPeak     = peakFRSm;
+%     results.smoothPeakTime = peakTimeSm;
+%     results.smoothMin      = smoothFR(zeroPointSmIdx);
+%     results.smoothMinTime  = binCenters(zeroPointSmIdx);
+%     results.smoothSlope    = slopeSm;
+% 
+% end % End if smoothData
 
 end % End calculate Response Function
 
@@ -499,21 +665,21 @@ handles.PostSlope = line([data.PeakTime data.PostMinTime ],...
     'lineWidth',1,'color',cmap(2,:),'lineStyle','--',...
     'HandleVisibility','off');
 
-% Draw Fit Slopes
-preFit = ( (data.PreMinTime:diff(data.X(1:2)):data.FitPeakTime) ./1000 ...
-         .* data.FitPreSlope(1) ) + data.FitPreSlope(2);
-% preFit = preFit - (preFit(1) - data.PreMin);    
-handles.FitPreSlope = plot(data.PreMinTime:diff(data.X(1:2)):data.FitPeakTime,...
-                      preFit,'lineWidth',1,'color',cmap(2,:),'lineStyle',':',...
-                      'HandleVisibility','off');
-                  
-postFit = ( (data.FitPeakTime:diff(data.X(1:2)):data.PostMinTime) ./1000 ...
-         .* data.FitPostSlope(1) ) + data.FitPostSlope(2);
-postFit = postFit - (postFit(1) - data.FitPeak); 
-handles.FitPostSlope = plot(data.FitPeakTime:diff(data.X(1:2)):data.PostMinTime,...
-    postFit,...
-    'lineWidth',1,'color',cmap(2,:),'lineStyle',':',...
-    'HandleVisibility','off');
+% % Draw Fit Slopes
+% preFit = ( (data.PreMinTime:diff(data.X(1:2)):data.FitPeakTime) ./1000 ...
+%          .* data.FitPreSlope(1) ) + data.FitPreSlope(2);
+% % preFit = preFit - (preFit(1) - data.PreMin);    
+% handles.FitPreSlope = plot(data.PreMinTime:diff(data.X(1:2)):data.FitPeakTime,...
+%                       preFit,'lineWidth',1,'color',cmap(2,:),'lineStyle',':',...
+%                       'HandleVisibility','off');
+%                   
+% postFit = ( (data.FitPeakTime:diff(data.X(1:2)):data.PostMinTime) ./1000 ...
+%          .* data.FitPostSlope(1) ) + data.FitPostSlope(2);
+% postFit = postFit - (postFit(1) - data.FitPeak); 
+% handles.FitPostSlope = plot(data.FitPeakTime:diff(data.X(1:2)):data.PostMinTime,...
+%     postFit,...
+%     'lineWidth',1,'color',cmap(2,:),'lineStyle',':',...
+%     'HandleVisibility','off');
       
 % % Inset perTrial slope distribution
 % trialSlopeAx = axes('Position',[.3 .7 .2 .2]);
