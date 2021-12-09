@@ -25,6 +25,9 @@ function [g] = groupPsthTrialLimits(varargin)
 %   PointSize    = Scalar value, scales raster point size.
 %   ZScore       = If using Z score, otherwise firing rate is used (logical,
 %                  default = false)
+%   PointRaster  = Scalar logical. Default true: raster elements are
+%                  points. If false: raster elements are lines.
+%                  
 %
 %   TODO: Adapt this so it will handle both single and double time vectors?
 %
@@ -49,6 +52,7 @@ defShowError    = true;
 defZeroLine     = false;
 defPointSize    = 2;
 defZScore       = false;
+defRasterElement = true;
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -87,28 +91,30 @@ addParameter(p, 'ShowError', defShowError, @(x) islogical(x));
 addParameter(p, 'ZeroLine', defZeroLine,@(x) islogical(x));
 addParameter(p, 'PointSize', defPointSize, valNumScalarNonEmpty);
 addParameter(p, 'ZScore', defZScore, valBinaryScalar);
+addParameter(p, 'PointRaster', defRasterElement, valBinaryScalar)
 
 parse(p, varargin{:});
 
-spikeTimes  = p.Results.spikeTimes; 
-eventTimes  = p.Results.eventTimes(:,1);
-trialLimits = p.Results.eventTimes(:,2);
-group       = p.Results.Group;
-prev        = p.Results.Previous;
-post        = p.Results.Post;
-sbin        = p.Results.BinSize;
-Hz          = p.Results.Hz;
-figTitle    = p.Results.Title;
-subTitles   = p.Results.SubTitles;
-plotType    = p.Results.PlotType;
-parent      = p.Results.Parent;
-groupNames  = p.Results.GroupNames;
-ordering    = p.Results.Ordering;
-showError   = p.Results.ShowError;
-groupTitle  = p.Results.GroupTitle;
-zeroLine    = p.Results.ZeroLine;
-pointSize   = p.Results.PointSize;
-isZScore    = p.Results.ZScore;
+spikeTimes    = p.Results.spikeTimes; 
+eventTimes    = p.Results.eventTimes(:,1);
+trialLimits   = p.Results.eventTimes(:,2);
+group         = p.Results.Group;
+prev          = p.Results.Previous;
+post          = p.Results.Post;
+sbin          = p.Results.BinSize;
+Hz            = p.Results.Hz;
+figTitle      = p.Results.Title;
+subTitles     = p.Results.SubTitles;
+plotType      = p.Results.PlotType;
+parent        = p.Results.Parent;
+groupNames    = p.Results.GroupNames;
+ordering      = p.Results.Ordering;
+showError     = p.Results.ShowError;
+groupTitle    = p.Results.GroupTitle;
+zeroLine      = p.Results.ZeroLine;
+pointSize     = p.Results.PointSize;
+isZScore      = p.Results.ZScore;
+isPointRaster = p.Results.PointRaster;
 
 clear p valNumColNonEmpty valNum2ColNonEmpty valNumScalarNonEmpty...
     valBinaryScalar valGroup valText valTitleArray valPlotType...
@@ -141,6 +147,12 @@ else
     assert(length(ordering) == length(nanUnique(group,false)), ['Ordering ', ...
     'values must be the same length as number of unique Groups']);
     setOrdering = true;
+end
+
+if isPointRaster
+    geomRaster = 'point';
+else
+    geomRaster = 'line';
 end
 
 
@@ -241,7 +253,7 @@ if plotType == 1 || plotType == 3
     if setOrdering
         g(yIdx, 1).set_order_options('color',ordering);
     end
-    g(yIdx, 1).geom_raster('geom','point');
+    g(yIdx, 1).geom_raster('geom', geomRaster);
     g(yIdx, 1).set_point_options('base_size', pointSize);
     g(yIdx, 1).set_title(subTitles(2),...
         'FontSize', 16);
