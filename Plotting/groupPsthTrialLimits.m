@@ -52,7 +52,7 @@ defShowError    = true;
 defZeroLine     = false;
 defPointSize    = 2;
 defZScore       = false;
-defRasterElement = true;
+defPointRaster  = true;
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -91,7 +91,7 @@ addParameter(p, 'ShowError', defShowError, @(x) islogical(x));
 addParameter(p, 'ZeroLine', defZeroLine,@(x) islogical(x));
 addParameter(p, 'PointSize', defPointSize, valNumScalarNonEmpty);
 addParameter(p, 'ZScore', defZScore, valBinaryScalar);
-addParameter(p, 'PointRaster', defRasterElement, valBinaryScalar)
+addParameter(p, 'PointRaster', defPointRaster, valBinaryScalar)
 
 parse(p, varargin{:});
 
