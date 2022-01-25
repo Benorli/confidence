@@ -55,7 +55,7 @@ post        = p.Results.Post;
 
 % if trial limits not provided use psth cutoff
 if isempty(trialLimits)
-    trialLimits = eventTimes - prev./1000;
+    trialLimits = eventTimes - prev;
 end
 
 clear p
