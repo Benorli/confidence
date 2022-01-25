@@ -1,4 +1,4 @@
-function [SessionData, spikes, spike2TrialStart] = loadBpodSpike2(name)
+function [SessionData, spikes, spike2TrialStart] = loadBpodSpike2(varargin)
 % LOADBPODSPIKE2(name)
 %
 %   [SessionData, spikes, spike2TrialStart] = LOADBPODSPIKE2(name)
@@ -7,7 +7,22 @@ function [SessionData, spikes, spike2TrialStart] = loadBpodSpike2(name)
 %       vector of spike times (in Spike2 time) and spike2TrialStart, a
 %       vector of trialStartTimes (in Spike2 time). Uses ui selection.
 
-validateattributes(name, {'char'}, {})
+% set default
+defSessionData = [];
+defSpike2Out = [];
+
+validChar      = @(x) validateattributes(x, {'char'}, {});
+validCellArray = @(x) validateattributes(x, {'cell'}, {});
+
+p = inputParser;
+addRequired(p, 'name', validChar);
+addParameter(p, 'SessionData', defSessionData, validChar);
+addParameter(p, 'Spike2Out', defSpike2Out, validCellArray);
+parse(p, varargin{:});
+
+name         = p.Results.name;
+sessionData  = p.Results.SessionData;
+spike2Out    = p.Results.Spike2Out;
 
 load('pathStruct', 'pathStruct');
 
@@ -28,13 +43,22 @@ end
 
 % load Bpod SessionData
 cd([pathStruct.BaseAnimalFolder, name, sessionLocation])
-[SessionDataFile] = uigetfile('.mat', 'Choose SessionData file');
+if ~isempty(sessionData)
+    SessionDataFile = sessionData;
+else
+    [SessionDataFile] = uigetfile('.mat', 'Choose SessionData file');
+end
 SessionData = load(SessionDataFile);
 SessionData = SessionData.SessionData;
 
 cd([pathStruct.BaseAnimalFolder, name, '\MATLAB\Spike2Matlab'])
-[spike2Files] = uigetfile('.mat', 'Choose Spike2 files', 'MultiSelect',...
-    'on');
+
+if ~isempty(spike2Out)
+    spike2Files = spike2Out;
+else
+    [spike2Files] = uigetfile('.mat', 'Choose Spike2 files', 'MultiSelect',...
+        'on');
+end
 
 % load Spike2 spikes and trial starts
 assert(numel(spike2Files) == 2, ['Choose two files, one containing spikes,'...
