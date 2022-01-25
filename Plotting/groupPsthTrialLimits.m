@@ -27,6 +27,8 @@ function [g] = groupPsthTrialLimits(varargin)
 %                  default = false)
 %   PointRaster  = Scalar logical. Default true: raster elements are
 %                  points. If false: raster elements are lines.
+%   SortRasterLimRange = Sort trials in raster based on limit range.
+%                        Logical binary. default true.
 %                  
 %
 %   TODO: Adapt this so it will handle both single and double time vectors?
@@ -36,23 +38,24 @@ function [g] = groupPsthTrialLimits(varargin)
 p = inputParser; % Create object of class 'inputParser'
 
 % define defaults
-defPrev         = []; % in ms
-defPost         = 1000; % in ms
-defSbin         = 100;  % in ms
-defHz           = true;
-deftitle        = 'Visualising Spike Densities';
-defSubTitle     = {'PSTH','Raster'};
-defParent       = [];
-defPlotType     = 3;
-defGroup        = [];
-defGroupNames   = [];
-defGroupTitle   = "Groups";
-defOrdering     = [];
-defShowError    = true;
-defZeroLine     = false;
-defPointSize    = 2;
-defZScore       = false;
-defPointRaster  = true;
+defPrev               = []; % in ms
+defPost               = 1000; % in ms
+defSbin               = 100;  % in ms
+defHz                 = true;
+deftitle              = 'Visualising Spike Densities';
+defSubTitle           = {'PSTH','Raster'};
+defParent             = [];
+defPlotType           = 3;
+defGroup              = [];
+defGroupNames         = [];
+defGroupTitle         = "Groups";
+defOrdering           = [];
+defShowError          = true;
+defZeroLine           = false;
+defPointSize          = 2;
+defZScore             = false;
+defPointRaster        = true;
+defSortRasterLimRange = true;
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -91,37 +94,39 @@ addParameter(p, 'ShowError', defShowError, @(x) islogical(x));
 addParameter(p, 'ZeroLine', defZeroLine,@(x) islogical(x));
 addParameter(p, 'PointSize', defPointSize, valNumScalarNonEmpty);
 addParameter(p, 'ZScore', defZScore, valBinaryScalar);
-addParameter(p, 'PointRaster', defPointRaster, valBinaryScalar)
-
+addParameter(p, 'PointRaster', defPointRaster, valBinaryScalar);
+addParameter(p, 'SortRasterLimRange', defSortRasterLimRange,...
+    valBinaryScalar);
 parse(p, varargin{:});
 
-spikeTimes    = p.Results.spikeTimes; 
-eventTimes    = p.Results.eventTimes(:,1);
-trialLimits   = p.Results.eventTimes(:,2);
-group         = p.Results.Group;
-prev          = p.Results.Previous;
-post          = p.Results.Post;
-sbin          = p.Results.BinSize;
-Hz            = p.Results.Hz;
-figTitle      = p.Results.Title;
-subTitles     = p.Results.SubTitles;
-plotType      = p.Results.PlotType;
-parent        = p.Results.Parent;
-groupNames    = p.Results.GroupNames;
-ordering      = p.Results.Ordering;
-showError     = p.Results.ShowError;
-groupTitle    = p.Results.GroupTitle;
-zeroLine      = p.Results.ZeroLine;
-pointSize     = p.Results.PointSize;
-isZScore      = p.Results.ZScore;
-isPointRaster = p.Results.PointRaster;
+spikeTimes         = p.Results.spikeTimes; 
+eventTimes         = p.Results.eventTimes(:,1);
+trialLimits        = p.Results.eventTimes(:,2);
+group              = p.Results.Group;
+prev               = p.Results.Previous;
+post               = p.Results.Post;
+sbin               = p.Results.BinSize;
+Hz                 = p.Results.Hz;
+figTitle           = p.Results.Title;
+subTitles          = p.Results.SubTitles;
+plotType           = p.Results.PlotType;
+parent             = p.Results.Parent;
+groupNames         = p.Results.GroupNames;
+ordering           = p.Results.Ordering;
+showError          = p.Results.ShowError;
+groupTitle         = p.Results.GroupTitle;
+zeroLine           = p.Results.ZeroLine;
+pointSize          = p.Results.PointSize;
+isZScore           = p.Results.ZScore;
+isPointRaster      = p.Results.PointRaster;
+sortRasterLimRange = p.Results.SortRasterLimRange;
 
 clear p valNumColNonEmpty valNum2ColNonEmpty valNumScalarNonEmpty...
     valBinaryScalar valGroup valText valTitleArray valPlotType...
     valGroupNames valOrdering defPrev defPost defSbin defHz deftitle...
     defSubTitle defParent defPlotType defGroup defGroupNames...
     defGroupTitle defOrdering defShowError defZeroLine defPointSize...
-    defZScore
+    defZScore defPointRaster defSortRasterLimRange
 
 if isempty(group) || length(nanUnique(group,false)) == 1
     group = ones(size(eventTimes));
@@ -171,6 +176,14 @@ if setGroupNames
 else
     group = categorical(group);
 end
+
+ if sortRasterLimRange
+      limitRange =  eventTimes - trialLimits;
+      [~, eventIdx] = sort(limitRange); 
+      trialLimits = trialLimits(eventIdx);
+      eventTimes = eventTimes(eventIdx);
+      group = group(eventIdx);
+ end
 
 spikeTimesFromEvent = compareSpikes2EventsMex(spikeTimes, eventTimes,...
     'Previous', prev,...
