@@ -178,7 +178,7 @@ else
 end
 
  if sortRasterLimRange
-      limitRange =  eventTimes - trialLimits;
+      limitRange =  abs(eventTimes - trialLimits);
       [~, eventIdx] = sort(limitRange); 
       trialLimits = trialLimits(eventIdx);
       eventTimes = eventTimes(eventIdx);
