@@ -241,7 +241,8 @@ if plotType >= 2
     else
         g(1,1).stat_summary('setylim',true,'geom','line');
     end
-    g(1,1).axe_property('YLim',[botYLim Inf]); % Don't allow negative values
+    g(1,1).axe_property('YLim',[botYLim Inf],... Don't allow negative values
+                        'XLim',[-prev post]); 
     g(1,1).set_title(subTitles(1),...
         'FontSize', 16);
     g(1,1).set_text_options('base_size', 15,...
@@ -277,6 +278,7 @@ if plotType == 1 || plotType == 3
     g(yIdx, 1).set_names('x','Time (ms)',...
         'y', 'Trials',...
         'color',groupTitle);
+    g(yIdx,1).axe_property('XLim',[-prev post]);
     if zeroLine
         g(yIdx,1).geom_vline('xintercept',0,...
             'style','k:');
