@@ -169,6 +169,9 @@ addpath(pathStruct.gramm)
 
 if setGroupNames
     try
+        if islogical(group)
+            group = group + 1; % values 1 and 2 allow following indexing
+        end
         group = categorical(groupNames(group));
     catch
         group = categorical(group);
