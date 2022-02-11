@@ -6,6 +6,11 @@ function [SessionData, spikes, spike2TrialStart] = loadBpodSpike2(varargin)
 %       simplifies loading of the recorded SessionData struct, spikes, a 
 %       vector of spike times (in Spike2 time) and spike2TrialStart, a
 %       vector of trialStartTimes (in Spike2 time). Uses ui selection.
+%
+%   Name-Value pairs:
+%       SessionData: Char array, filename for SessionData file
+%       Spike2Out  : Cell array, 2 items,character arrays, with filenames 
+%                    for spike2 export files.
 
 % set default
 defSessionData = [];
