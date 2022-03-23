@@ -31,6 +31,7 @@ function [g, sbin] = groupPsthTrialLimits(varargin)
 %                        Scalar logical, default true.
 %   OptimiseBinSize    = Optimise binsize based on the shimazaki et al 2007 
 %                        method. Scalar logical, default false.
+%   YLimits            = Specifies Y limits, numeric, size [1 2].
 %                  
 %
 %   TODO: Adapt this so it will handle both single and double time vectors?
@@ -59,6 +60,7 @@ defZScore             = false;
 defPointRaster        = true;
 defSortRasterLimRange = true;
 defOptimiseBinSize    = false;
+defYLims              = [];
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -78,6 +80,8 @@ valPlotType = @(x) validateattributes(x, {'numeric'},...
     {'nonempty','scalar','>',0,'<',4});
 valGroupNames = @(x) validateattributes(x, {'char', 'string','cell'}, {'nonempty'});
 valOrdering = @(x) validateattributes(x, {'char', 'string','cell','numeric'}, {'nonempty'});
+valNumericRange = @(x) validateattributes(x, {'numeric'},...
+    {'size', [1 2]});
     
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNum2ColNonEmpty);
@@ -101,6 +105,7 @@ addParameter(p, 'PointRaster', defPointRaster, valBinaryScalar);
 addParameter(p, 'SortRasterLimRange', defSortRasterLimRange,...
     valBinaryScalar);
 addParameter(p, 'OptimiseBinSize', defOptimiseBinSize, valBinaryScalar);
+addParameter(p, 'YLimits', defYLims, valNumericRange);
 parse(p, varargin{:});
 
 spikeTimes         = p.Results.spikeTimes; 
@@ -125,6 +130,7 @@ isZScore           = p.Results.ZScore;
 isPointRaster      = p.Results.PointRaster;
 sortRasterLimRange = p.Results.SortRasterLimRange;
 optBin             = p.Results.OptimiseBinSize;
+yLimits            = p.Results.YLimits;
 
 clear p valNumColNonEmpty valNum2ColNonEmpty valNumScalarNonEmpty...
     valBinaryScalar valGroup valText valTitleArray valPlotType...
@@ -222,7 +228,14 @@ else
     yIdx = 1;
 end
 
-botYLim = 0; % Don't allow negative values for non ZScore data
+
+if isempty(yLimits)
+    botYLim = 0; % Don't allow negative values for non ZScore data
+    topYLim = inf;
+else
+    botYLim = yLimits(1);
+    topYLim = yLimits(2);
+end
 
 if isZScore
     nCellRows = length(binnedSpikes);
@@ -237,7 +250,9 @@ if isZScore
     binnedSpikes = mat2cell(binnedSpikes, lenPrCell*ones(nCellRows, 1), 1);
     
     psthYAxisLabel = 'Firing rate (Z-Score)';
-    botYLim = -inf; % allow negative values    
+    if isempty(yLimits)
+        botYLim = -inf; % allow negative values
+    end
 end
 
 if plotType >= 2
@@ -255,7 +270,7 @@ if plotType >= 2
     else
         g(1,1).stat_summary('setylim',true,'geom','line');
     end
-    g(1,1).axe_property('YLim',[botYLim Inf],... Don't allow negative values
+    g(1,1).axe_property('YLim',[botYLim topYLim],... Don't allow negative values
                         'XLim',[-prev post]); 
     g(1,1).set_title(subTitles(1),...
         'FontSize', 16);
@@ -331,7 +346,7 @@ g.draw();
 % end
     
 % Fix axis bugs
-if plotType > 1
+if plotType > 1 && isempty(yLimits)
     % Get data values
     try
         allStats = [g(1,1).results.stat_summary.y];
