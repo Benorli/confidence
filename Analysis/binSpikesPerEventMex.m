@@ -20,6 +20,7 @@ function [binnedSpikes, binCenters, binEdges] = binSpikesPerEventMex(varargin)
 %   Previous         = The amount of time (ms) before the event to include.
 %   Post             = The amount of time (ms) after the event to include.
 %   BinSize          = The width of each bin in ms (default 100 ms).
+%   BinCount         = Will override Bin Size
 %   Hz               = A binary logical or numeric, if 1/true counts are 
 %                      converted to Hz. Default is true.
 %   WrapOutputInCell = Wrap each output into a cell, particularly useful
@@ -35,6 +36,7 @@ p = inputParser; % Create object of class 'inputParser'
 defprev        = 2500; % in ms
 defpost        = 2500; % in ms
 defbinsize     = 100;  % in ms
+defBinCount    = [];
 defHz          = true;
 defcellWrap    = false;
 defTrialLimits = varargin{2} - defprev./1000;
@@ -46,7 +48,7 @@ valPosScalarNonEmpty = @(x) validateattributes(x, {'numeric'},...
     {'nonempty', 'scalar', '>=', 0});
 valIntScalarNonEmpty = @(x) validateattributes(x, {'numeric'},...
     {'nonempty', 'scalar', 'integer'});
-valBinary = @(x) validateattributes(x, {'numeric', 'logical'},...
+valBinary = @(x) validateattributes(x, {'numeric', 'logical'},...   
     {'nonempty', 'scalar', 'binary'});
 valTrialLimits = @(x) validateattributes(x, {'numeric'},...
     {'nonempty','size',[length(varargin{2}) 1]});
@@ -54,6 +56,7 @@ valTrialLimits = @(x) validateattributes(x, {'numeric'},...
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNumColNonEmpty);
 addParameter(p, 'BinSize', defbinsize, valIntScalarNonEmpty);
+addParameter(p, 'BinCount', defBinCount, valIntScalarNonEmpty);
 addParameter(p, 'Previous', defprev, valPosScalarNonEmpty);
 addParameter(p, 'Post', defpost, valPosScalarNonEmpty);
 addParameter(p, 'Hz', defHz, valBinary);
@@ -68,6 +71,7 @@ eventTimes  = p.Results.eventTimes * 1000; % convert to ms
 trialLimits = p.Results.TrialLimits * 1000; % convert to ms
 cellWrap    = p.Results.WrapOutputInCell;
 binWidth    = p.Results.BinSize;
+binCount    = p.Results.BinCount;
 prev        = p.Results.Previous;
 post        = p.Results.Post;
 Hz          = p.Results.Hz;
@@ -87,18 +91,25 @@ occurringEvents = find(~isnan(eventTimes))';
 assert(~isempty(occurringEvents), ['No events occured, eventTimes ',...
     'contained only NaNs'])
 
+binnedSpikes = cell(length(eventTimes), 1);
+binnedSpikes(:) = {zeros(length(binEdges)-1, 1)};
+
 % remove spikes outside our event range - can speed things up if there are
 % lots of spikes
 spikeTimes(spikeTimes < min(eventTimes)-prev | ... 
            spikeTimes > max(eventTimes)+post) = [];
 
-binnedSpikes = cell(length(eventTimes), 1);
-binnedSpikes(:) = {zeros(length(binEdges)-1, 1)};
+if isempty(spikeTimes)
+    spikeTimes = -100;
+end
 
 for i = occurringEvents    
-    
-    [counts, binCenters] = histdiff(spikeTimes, eventTimes(i),binEdges);
-    
+    % If a bin count was provided use this to calculate the binWidth
+    if ~isempty(binCount)
+        [counts, binCenters] = histdiff(spikeTimes, eventTimes(i),binCount);
+    else
+        [counts, binCenters] = histdiff(spikeTimes, eventTimes(i),binEdges);
+    end
     % Check if the trial start provided is within the window
     if trialLimits(i) > eventTimes(i)
         prevLimit = prev;
@@ -117,10 +128,14 @@ for i = occurringEvents
 end
 
 
-assert(sum(cell2mat(binnedSpikes)) ~= 0, ['No spikes found in any trials. '....
-    'Please check 1) spike times vector is not empty, 2) You remembered'...
-    ' to add the trial start time to the eventTimes 3) The'...
-    ' synchronisation was effective 4) The time window is large enough']);
+% assert(sum(cell2mat(binnedSpikes)) ~= 0, ['No spikes found in any trials. '....
+%     'Please check 1) spike times vector is not empty, 2) You remembered'...
+%     ' to add the trial start time to the eventTimes 3) The'...
+%     ' synchronisation was effective 4) The time window is large enough']);
+
+if sum(cell2mat(binnedSpikes)) == 0
+    warning('No spikes found in any trials...');
+end
 
 if Hz
     binnedSpikes = cellfun(@(x) x * 1000 / binWidth, binnedSpikes,...

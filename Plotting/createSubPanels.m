@@ -20,11 +20,12 @@ function panels = createSubPanels(varargin)
 p = inputParser; % Create object of class 'inputParser'
 
 % define defaults
-defIndex   = [];
-defHandle  = [];
-defBorders = 2.5;
-defSpacing = 1;
-defTitle   = true;
+defIndex        = [];
+defHandle       = [];
+defBorders      = 2.5;
+defSpacing      = 1;
+defTitle        = true;
+defTitleSize    = 5;  
 
 % validation funs
 valPercentage = @(x) validateattributes(x, {'numeric'},...
@@ -43,6 +44,7 @@ addParameter(p, 'Handle', defHandle, @ishandle);
 addParameter(p, 'Borders', defBorders, valPercentage);
 addParameter(p, 'Spacing', defSpacing, valPercentage);
 addParameter(p, 'Title', defTitle, valLogical);
+addParameter(p, 'TitleSize', defTitleSize, valPercentage);
 
 parse(p, varargin{:});
 
@@ -53,7 +55,7 @@ figHandle  = p.Results.Handle;
 borders = p.Results.Borders;
 spacing = p.Results.Spacing;
 title   = p.Results.Title;
-
+titleSize = p.Results.TitleSize;
 
 clear p
 
@@ -73,12 +75,17 @@ if isempty(figHandle)
 end
 
 % Convert Percentages to fractions
-borders = borders ./100;
-spacing = spacing ./100;
+borders     = borders ./100;
+spacing     = spacing ./100;
+titleSize   = titleSize ./100; 
+
+if ~title 
+    titleSize = 0;
+end
 
 %% Loop to Create Panels
 
-verticalSize   = (1 - 2*borders - spacing*(rows-1))/rows;
+verticalSize   = (1 - titleSize - 2*borders - spacing*(rows-1))/rows;
 horizontalSize = (1 - 2*borders - spacing*(columns-1))/columns;
 rowVector = rows:-1:1;
 indexCount = 1;
@@ -130,7 +137,7 @@ if ~createAll % We just need to create a single panel
 end
 
 if title % Create a panel for the title  
-    panels(end+1) = uipanel('Position',[0 1-borders*2 1 borders*2],...
+    panels(end+1) = uipanel('Position',[0 1-titleSize 1 titleSize],...
             'Parent',figHandle,'BackgroundColor',[1 1 1],...
             'BorderType','none');        
 end

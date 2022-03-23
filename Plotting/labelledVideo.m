@@ -161,7 +161,7 @@ end
 clear p
     
 %% Find the time points that define this trial
-trialRow  = clusterData.SessionData(trialNum,:);
+trialRow  = clusterData.ConfidenceSession(trialNum,:);
 trialData.Start = trialRow.ephysTrialStartTime;
 try
     % get 0.5 extra seconds after trial end (leaving decision/reward)

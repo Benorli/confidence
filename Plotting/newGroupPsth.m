@@ -1,4 +1,4 @@
-function [g, sbin] = groupPsthTrialLimits(varargin)
+function [g] = newGroupPsth(varargin)
 % GROUPPSTH Return figure of a persitimuls time histogram
 %   [g] = groupPsthTrialLimits(spikeTimes, eventTimes, *group) takes a vector  
 %   of spike times(s), a two column matrix of event times (s) - first
@@ -27,46 +27,35 @@ function [g, sbin] = groupPsthTrialLimits(varargin)
 %                  default = false)
 %   PointRaster  = Scalar logical. Default true: raster elements are
 %                  points. If false: raster elements are lines.
-%   SortRasterLimRange = Sort trials in raster based on limit range.
-%                        Scalar logical, default true.
-%   OptimiseBinSize    = Optimise binsize based on the shimazaki et al 2007 
-%                        method. Scalar logical, default false.
-%   YLimits            = Specifies Y limits, numeric, size [1 2].
-%   Kernel       = Use kernel density estimation approach for plotting histogram
-%                  (logical, default = false)
-%   Text Options
-%   fontSize, labelScaling, legendScaling,legendTitleScaling,titleFontSize
-
+%   Facets       = Values to split into subplots with, i.e. trial Type
+%                  Can be integers, strings, categorical. Must be same
+%                  length as spikeTimes
+%
+%   TODO: Adapt this so it will handle both single and double time vectors?
+%
 %% parse variable input arguments
 
 p = inputParser; % Create object of class 'inputParser'
 
 % define defaults
-defPrev               = []; % in ms
-defPost               = 1000; % in ms
-defSbin               = 100;  % in ms
-defHz                 = true;
-deftitle              = 'Visualising Spike Densities';
-defSubTitle           = {'PSTH','Raster'};
-defParent             = [];
-defPlotType           = 3;
-defGroup              = [];
-defGroupNames         = [];
-defGroupTitle         = "Groups";
-defOrdering           = [];
-defShowError          = true;
-defZeroLine           = true;
-defPointSize          = 2;
-defZScore             = false;
-defPointRaster        = true;
-defSortRasterLimRange = true;
-defOptimiseBinSize    = false;
-defYLims              = [];
-defFontSize           = 15;
-defTitleFontSize      = 16;
-defLabelScaling       = 1.33;
-defLegendScaling      = 0.8;
-defLegendTitleScale     = 1.2;
+defPrev         = []; % in ms
+defPost         = 1000; % in ms
+defSbin         = 100;  % in ms
+defHz           = true;
+deftitle        = 'Visualising Spike Densities';
+defSubTitle     = {'PSTH','Raster'};
+defParent       = [];
+defPlotType     = 3;
+defGroup        = [];
+defGroupNames   = [];
+defGroupTitle   = "Groups";
+defOrdering     = [];
+defShowError    = true;
+defZeroLine     = false;
+defPointSize    = 2;
+defZScore       = false;
+defPointRaster  = true;
+defFacet        = [];
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -77,8 +66,6 @@ valNumScalarNonEmpty = @(x) validateattributes(x, {'numeric'},...
     {'nonempty', 'scalar'});
 valBinaryScalar = @(x) validateattributes(x, {'logical', 'numeric'},...
     {'nonempty', 'binary', 'scalar'});
-valNum = @(x) validateattributes(x, {'numeric'}, {'nonempty'});
-
 % group must be a valid input for findgroups
 valGroup = @(x) validateattributes(x, {'numeric', 'categorical',...
     'calendarDuration', 'datetime', 'duration', 'logical', 'string','cell','char'}, {});
@@ -88,8 +75,6 @@ valPlotType = @(x) validateattributes(x, {'numeric'},...
     {'nonempty','scalar','>',0,'<',4});
 valGroupNames = @(x) validateattributes(x, {'char', 'string','cell'}, {'nonempty'});
 valOrdering = @(x) validateattributes(x, {'char', 'string','cell','numeric'}, {'nonempty'});
-valNumericRange = @(x) validateattributes(x, {'numeric'},...
-    {'size', [1 2]});
     
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNum2ColNonEmpty);
@@ -109,56 +94,39 @@ addParameter(p, 'ShowError', defShowError, @(x) islogical(x));
 addParameter(p, 'ZeroLine', defZeroLine,@(x) islogical(x));
 addParameter(p, 'PointSize', defPointSize, valNumScalarNonEmpty);
 addParameter(p, 'ZScore', defZScore, valBinaryScalar);
-addParameter(p, 'PointRaster', defPointRaster, valBinaryScalar);
-addParameter(p, 'SortRasterLimRange', defSortRasterLimRange,...
-    valBinaryScalar);
-addParameter(p, 'OptimiseBinSize', defOptimiseBinSize, valBinaryScalar);
-addParameter(p, 'YLimits', defYLims, valNumericRange);
-addParameter(p, 'FontSize', defFontSize, valNum);
-addParameter(p, 'TitleFontSize', defTitleFontSize, valNum);
-addParameter(p, 'LabelScaling', defLabelScaling, valNum);
-addParameter(p, 'LegendScaling', defLegendScaling, valNum);
-addParameter(p, 'LegendTitleScaling', defLegendTitleScale, valNum);
-
+addParameter(p, 'PointRaster', defPointRaster, valBinaryScalar)
+addParameter(p, 'Facet',defFacet, valGroup);
 
 parse(p, varargin{:});
 
-spikeTimes         = p.Results.spikeTimes; 
-eventTimes         = p.Results.eventTimes(:,1);
-trialLimits        = p.Results.eventTimes(:,2);
-group              = p.Results.Group;
-prev               = p.Results.Previous;
-post               = p.Results.Post;
-sbin               = p.Results.BinSize;
-Hz                 = p.Results.Hz;
-figTitle           = p.Results.Title;
-subTitles          = p.Results.SubTitles;
-plotType           = p.Results.PlotType;
-parent             = p.Results.Parent;
-groupNames         = p.Results.GroupNames;
-ordering           = p.Results.Ordering;
-showError          = p.Results.ShowError;
-groupTitle         = p.Results.GroupTitle;
-zeroLine           = p.Results.ZeroLine;
-pointSize          = p.Results.PointSize;
-isZScore           = p.Results.ZScore;
-isPointRaster      = p.Results.PointRaster;
-sortRasterLimRange = p.Results.SortRasterLimRange;
-optBin             = p.Results.OptimiseBinSize;
-yLimits            = p.Results.YLimits;
-
-fontSize            = p.Results.FontSize;
-titleFontSize       = p.Results.TitleFontSize;
-labelScaling        = p.Results.LabelScaling;
-legendScaling       = p.Results.LegendScaling;
-legendTitleScaling  = p.Results.LegendTitleScaling;
+spikeTimes    = p.Results.spikeTimes; 
+eventTimes    = p.Results.eventTimes(:,1);
+trialLimits   = p.Results.eventTimes(:,2);
+group         = p.Results.Group;
+prev          = p.Results.Previous;
+post          = p.Results.Post;
+sbin          = p.Results.BinSize;
+Hz            = p.Results.Hz;
+figTitle      = p.Results.Title;
+subTitles     = p.Results.SubTitles;
+plotType      = p.Results.PlotType;
+parent        = p.Results.Parent;
+groupNames    = p.Results.GroupNames;
+ordering      = p.Results.Ordering;
+showError     = p.Results.ShowError;
+groupTitle    = p.Results.GroupTitle;
+zeroLine      = p.Results.ZeroLine;
+pointSize     = p.Results.PointSize;
+isZScore      = p.Results.ZScore;
+isPointRaster = p.Results.PointRaster;
+facet         = p.Results.facet;
 
 clear p valNumColNonEmpty valNum2ColNonEmpty valNumScalarNonEmpty...
     valBinaryScalar valGroup valText valTitleArray valPlotType...
     valGroupNames valOrdering defPrev defPost defSbin defHz deftitle...
     defSubTitle defParent defPlotType defGroup defGroupNames...
     defGroupTitle defOrdering defShowError defZeroLine defPointSize...
-    defZScore defPointRaster defSortRasterLimRange
+    defZScore
 
 if isempty(group) || length(nanUnique(group,false)) == 1
     group = ones(size(eventTimes));
@@ -169,6 +137,11 @@ end
 
 assert(length(eventTimes) == length(group), ['group must be the same ', ...
     'length as eventTimes']);
+
+if ~isempty(facet)
+    assert(length(eventTimes) == length(facet), ['facet must be the same ', ...
+    'length as eventTimes']);
+end
 
 if isempty(groupNames) || length(nanUnique(group)) == 1
     setGroupNames = false;
@@ -202,9 +175,6 @@ end
 
 if setGroupNames
     try
-        if islogical(group)
-            group = group + 1; % values 1 and 2 allow following indexing
-        end
         group = categorical(groupNames(group));
     catch
         group = categorical(group);
@@ -213,24 +183,10 @@ else
     group = categorical(group);
 end
 
- if sortRasterLimRange
-      limitRange =  abs(eventTimes - trialLimits);
-      [~, eventIdx] = sort(limitRange); 
-      trialLimits = trialLimits(eventIdx);
-      eventTimes = eventTimes(eventIdx);
-      group = group(eventIdx);
- end
-
 spikeTimesFromEvent = compareSpikes2EventsMex(spikeTimes, eventTimes,...
     'Previous', prev,...
     'Post', post,...
     'TrialLimits',trialLimits);
-
-if optBin == true  % optimise using the shimazaki et al 2007 method 
-    nbins = sshist(cell2mat(spikeTimesFromEvent));
-    sbin  = round((prev + post) / nbins);
-end
-
 [binnedSpikes, binCenters] = binSpikesPerEventMex(spikeTimes, eventTimes,...
     'Previous', prev,...
     'Post', post,...
@@ -250,14 +206,7 @@ else
     yIdx = 1;
 end
 
-
-if isempty(yLimits)
-    botYLim = 0; % Don't allow negative values for non ZScore data
-    topYLim = inf;
-else
-    botYLim = yLimits(1);
-    topYLim = yLimits(2);
-end
+botYLim = 0; % Don't allow negative values for non ZScore data
 
 if isZScore
     nCellRows = length(binnedSpikes);
@@ -272,9 +221,7 @@ if isZScore
     binnedSpikes = mat2cell(binnedSpikes, lenPrCell*ones(nCellRows, 1), 1);
     
     psthYAxisLabel = 'Firing rate (Z-Score)';
-    if isempty(yLimits)
-        botYLim = -inf; % allow negative values
-    end
+    botYLim = -inf; % allow negative values    
 end
 
 if plotType >= 2
@@ -292,14 +239,17 @@ if plotType >= 2
     else
         g(1,1).stat_summary('setylim',true,'geom','line');
     end
-    g(1,1).axe_property('YLim',[botYLim topYLim],... Don't allow negative values
-                        'XLim',[-prev post]); 
+    if ~isempty(facet)
+        g(1,1).facet_grid(facet);
+    end
+
+    g(1,1).axe_property('YLim',[botYLim Inf]); % Don't allow negative values
     g(1,1).set_title(subTitles(1),...
-        'FontSize', titleFontSize);
-    g(yIdx,1).set_text_options('base_size', fontSize,...
-        'label_scaling', labelScaling,...
-        'legend_scaling', legendScaling,...
-        'legend_title_scaling', legendTitleScaling);
+        'FontSize', 16);
+    g(1,1).set_text_options('base_size', 15,...
+        'label_scaling', 1.33,...
+        'legend_scaling', 0.8,...
+        'legend_title_scaling', 1.2);
     g(1,1).set_names('x','Time (ms)',...
         'y', psthYAxisLabel,...
         'color',groupTitle);
@@ -321,16 +271,14 @@ if plotType == 1 || plotType == 3
     g(yIdx, 1).geom_raster('geom', geomRaster);
     g(yIdx, 1).set_point_options('base_size', pointSize);
     g(yIdx, 1).set_title(subTitles(2),...
-        'FontSize', titleFontSize);
-    g(yIdx,1).set_text_options('base_size', fontSize,...
-        'label_scaling', labelScaling,...
-        'legend_scaling', legendScaling,...
-        'legend_title_scaling', legendTitleScaling);
-
+        'FontSize', 16);
+    g(yIdx,1).set_text_options('base_size', 15,...
+        'label_scaling', 1.33,...
+        'legend_scaling', 0.8,...
+        'legend_title_scaling', 1.2);
     g(yIdx, 1).set_names('x','Time (ms)',...
         'y', 'Trials',...
         'color',groupTitle);
-    g(yIdx,1).axe_property('XLim',[-prev post]);
     if zeroLine
         g(yIdx,1).geom_vline('xintercept',0,...
             'style','k:');
@@ -343,7 +291,7 @@ end
 
 % Set title
 g.set_title(figTitle,...
-    'FontSize', titleFontSize);
+    'FontSize', 20);
 
 
 % plot into parent panel/axes as needed
@@ -369,7 +317,7 @@ g.draw();
 % end
     
 % Fix axis bugs
-if plotType > 1 && isempty(yLimits)
+if plotType > 1
     % Get data values
     try
         allStats = [g(1,1).results.stat_summary.y];
