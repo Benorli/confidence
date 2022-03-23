@@ -1,4 +1,4 @@
-function [g] = groupPsthTrialLimits(varargin)
+function [g, sbin] = groupPsthTrialLimits(varargin)
 % GROUPPSTH Return figure of a persitimuls time histogram
 %   [g] = groupPsthTrialLimits(spikeTimes, eventTimes, *group) takes a vector  
 %   of spike times(s), a two column matrix of event times (s) - first
@@ -28,7 +28,9 @@ function [g] = groupPsthTrialLimits(varargin)
 %   PointRaster  = Scalar logical. Default true: raster elements are
 %                  points. If false: raster elements are lines.
 %   SortRasterLimRange = Sort trials in raster based on limit range.
-%                        Logical binary. default true.
+%                        Scalar logical, default true.
+%   OptimiseBinSize    = Optimise binsize based on the shimazaki et al 2007 
+%                        method. Scalar logical, default false.
 %                  
 %
 %   TODO: Adapt this so it will handle both single and double time vectors?
@@ -56,6 +58,7 @@ defPointSize          = 2;
 defZScore             = false;
 defPointRaster        = true;
 defSortRasterLimRange = true;
+defOptimiseBinSize    = false;
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -97,6 +100,7 @@ addParameter(p, 'ZScore', defZScore, valBinaryScalar);
 addParameter(p, 'PointRaster', defPointRaster, valBinaryScalar);
 addParameter(p, 'SortRasterLimRange', defSortRasterLimRange,...
     valBinaryScalar);
+addParameter(p, 'OptimiseBinSize', defOptimiseBinSize, valBinaryScalar);
 parse(p, varargin{:});
 
 spikeTimes         = p.Results.spikeTimes; 
@@ -120,6 +124,7 @@ pointSize          = p.Results.PointSize;
 isZScore           = p.Results.ZScore;
 isPointRaster      = p.Results.PointRaster;
 sortRasterLimRange = p.Results.SortRasterLimRange;
+optBin             = p.Results.OptimiseBinSize;
 
 clear p valNumColNonEmpty valNum2ColNonEmpty valNumScalarNonEmpty...
     valBinaryScalar valGroup valText valTitleArray valPlotType...
@@ -192,6 +197,12 @@ spikeTimesFromEvent = compareSpikes2EventsMex(spikeTimes, eventTimes,...
     'Previous', prev,...
     'Post', post,...
     'TrialLimits',trialLimits);
+
+if optBin == true  % optimise using the shimazaki et al 2007 method 
+    nbins = sshist(cell2mat(spikeTimesFromEvent));
+    sbin  = round((prev + post) / nbins);
+end
+
 [binnedSpikes, binCenters] = binSpikesPerEventMex(spikeTimes, eventTimes,...
     'Previous', prev,...
     'Post', post,...
