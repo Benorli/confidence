@@ -13,6 +13,14 @@ function [peakNearestDrop, changeIdxs] = findPeakNearestDrop(instFR, timePoints,
 % maxNumChanges: A scalar defining the number of change points to detect.
 %                The default value is 5. See the function ischange for more 
 %                details.
+% 
+% Outputs:
+% peakNearestDrop:   A vector of times for peaks nearest the drop
+% peakNearestDropFR: A vector of instananeous firing rates at peaks nearest
+%                    the drop
+% changeIdxs:      A vector of times, centered from the steepest drop
+%
+% TODO: how to handle empty trials
 
 narginchk(2,3);
 
@@ -37,9 +45,11 @@ maxIndices = islocalmax(instFR, 2,...
 nTrials = size(instFR, 1); 
 idxPeakNearestChange  = zeros(nTrials, 1);
 peakNearestDrop = zeros(nTrials, 1);
+peakNearestDropFR = zeros(nTrials, 1);
 changeIdxs = zeros(nTrials, 1);
+trlChangeTimes = zeros(nTrials, 1);
 
-for i = 1 : size(instFR, 1) % for every row
+for i = 1 : nTrials % for every row
     
     trlSegSlope = segmentSlope(i, :);
     % find the start and end idx of the most negative slope
