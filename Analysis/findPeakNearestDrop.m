@@ -1,4 +1,4 @@
-function [peakNearestDrop, changeIdxs] = findPeakNearestDrop(instFR, timePoints, varargin)
+function [peakNearestDrop, peakNearestDropFR, trlChangeTimes] = findPeakNearestDrop(instFR, timePoints, varargin)
 %% FINDPEAKNEARESTDROP Finds the peak time slosest the most steep drop in 
 % time series data.
 % 
@@ -60,10 +60,11 @@ for i = 1 : nTrials % for every row
     
     % get time of idx
     trlMaxTimes    = timePoints(maxIndices(i, :));
-    trlChangeTimes = timePoints(changeIdxs(i));
+    trlChangeTimes(i) = timePoints(changeIdxs(i));
     
     % find the closest local max to the change idx
-    [~, idxPeakNearestChange(i)] = min(abs(trlMaxTimes - trlChangeTimes));
+    [~, idxPeakNearestChange(i)] = min(abs(trlMaxTimes - trlChangeTimes(i)));
     peakNearestDrop(i) = trlMaxTimes(idxPeakNearestChange(i));
+    peakNearestDropFR(i) = instFR(timePoints == peakNearestDrop(i));
 end
 end
