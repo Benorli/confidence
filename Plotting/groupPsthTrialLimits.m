@@ -288,9 +288,9 @@ if plotType >= 2
         g(1,1).set_order_options('color',ordering);
     end
     if showError
-        g(1,1).stat_summary('setylim',true);
+        g(1,1).stat_summary('setylim',true, 'type', 'sem');
     else
-        g(1,1).stat_summary('setylim',true,'geom','line');
+        g(1,1).stat_summary('setylim',true,'geom','line', 'type', 'sem');
     end
     g(1,1).axe_property('YLim',[botYLim topYLim],... Don't allow negative values
                         'XLim',[-prev post]); 
