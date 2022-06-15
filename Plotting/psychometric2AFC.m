@@ -16,6 +16,7 @@ function [handle] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
 %                (string/empty, default = 'Confidence')
 %       DrawFit    = Draw a binomial distribution fit to the data (logical)
 %       DrawTrials = Label the number of trials at each data point (logical)
+%       BaseFontSize = base font size, scalar number
  
 
 
@@ -32,10 +33,14 @@ function [handle] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
     defDrawTrials    = true;
     defSDO           = [];
     defRDO           = [];
+    defBaseSize     = 16;
   
     % Validation functions
-    valNumNonEmpty = @(x) validateattributes(x, {'numeric'},{'nonempty'});
-    valDropOuts    = @(x) validateattributes(x, {'numeric','logical'},{'nonempty'});
+    %valNumNonEmpty = @(x) validateattributes(x, {'numeric'},{'nonempty'});
+    valDropOuts    = @(x) validateattributes(x, {'numeric','logical'},...
+                                             {'nonempty'});
+    valNumScalar   = @(x) validateattributes(x, {'numeric'}, ...
+                       {'scalar'});
 
     % add inputParser defaults and check var type
     addParameter(p, 'Title', defTitle, @(x) isstring(x));    
@@ -45,6 +50,7 @@ function [handle] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
     addParameter(p, 'DrawTrials', defDrawTrials, @(x) islogical(x));
     addParameter(p, 'SDO', defSDO, valDropOuts);
     addParameter(p, 'RDO', defRDO, valDropOuts);
+    addParameter(p, 'BaseFontSize', defBaseSize, valNumScalar);
     
     parse(p,varargin{:});
     
@@ -55,7 +61,8 @@ function [handle] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
     drawTrials      = p.Results.DrawTrials;
     parent          = p.Results.Parent;
     sdo             = p.Results.SDO;
-    rdo             = p.Results.RDO;          
+    rdo             = p.Results.RDO; 
+    baseFontSize    = p.Results.BaseFontSize;
  
     %% Prepare Data
     
@@ -101,6 +108,8 @@ function [handle] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
     
     % set labels
     g.set_names('x','Evidence (difference/sum)','y','Proportion Right Choice');
+    g.set_text_options('base_size', baseFontSize);
+    g.axe_property('TickDir', 'out');
     g.draw();
         
     if drawTrials        

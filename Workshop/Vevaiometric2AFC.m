@@ -5,18 +5,20 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
 %      [handle] = Vevaiometric2AFC()
 %       
 %       OPTIONAL INPUTS
-%       Parent = Handle to figure to plot in (handle)
-%       Title  = Title string, pass an empty string to leave blank 
-%                (string/empty, default = 'Confidence')
-%       DrawLegend = whether to draw Legend (logical)
-%       NBins  = # of bins to use (integer,default = 7, halved for 1 side)
-%       DrawPoints = draw individual data points (logical, default = true)
-%       DrawMean   = draw mean +- SEM (logical, default = true)
-%       OneSided   = plot absolute values for Evidence - ignores left/right distinction
-%                    (logical, default = false)                    
-%       PlotSide   = Draw data from specific side only, ('both','left' or
-%                    'right', default = 'both'
-%       YLims      = Set yLimits for plot (yLim vector, default = [] i.e. auto) 
+%       Parent       = Handle to figure to plot in (handle)
+%       Title        = Title string, pass an empty string to leave blank 
+%                     (string/empty, default = 'Confidence')
+%       DrawLegend   = whether to draw Legend (logical)
+%       NBins        = # of bins to use (integer,default = 7, halved for 1 
+%                     side)
+%       DrawPoints   = draw individual data points (logical, default = true)
+%       DrawMean     = draw mean +- SEM (logical, default = true)
+%       OneSided     = plot absolute values for Evidence - ignores 
+%                     left/right distinction (logical, default = false)   
+%       PlotSide     = Draw data from specific side only, ('both','left' or
+%                      'right', default = 'both'
+%       YLims        = Set yLimits for plot (yLim vector, default = [] i.e. auto) 
+%       BaseFontSize = base font size, scalar number
 
 
 %      % TO DO: 
@@ -35,11 +37,15 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
     defDrawLegend   = true;
     defTitle        = "Confidence";
     defYLims        = [];
+    defBaseSize     = 16;
 
     % Validation functions
-    valPlotSide = @(x) validateattributes(x, {'cell', 'string','char'}, {'nonempty'});
-    valYLims    = @(x) validateattributes(x, {'numeric'}, ...
+    valPlotSide  = @(x) validateattributes(x, {'cell', 'string','char'},...
+        {'nonempty'});
+    valYLims     = @(x) validateattributes(x, {'numeric'}, ...
                        {'nonempty','increasing','numel',2});
+    valNumScalar = @(x) validateattributes(x, {'numeric'}, ...
+                       {'scalar'});
 
     
     % add inputParser defaults and check var type
@@ -52,18 +58,20 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
     addParameter(p, 'PlotSide', defPlotSide, valPlotSide)
     addParameter(p, 'DrawLegend', defDrawLegend, @islogical);
     addParameter(p, 'YLims', defYLims, @isnumeric);
+    addParameter(p, 'BaseFontSize', defBaseSize, valNumScalar);
         
     parse(p,varargin{:});
     
-    parent      = p.Results.Parent;    
-    nBins       = p.Results.nBins;
-    drawPoints  = p.Results.DrawPoints;
-    drawMean    = p.Results.DrawMean;
-    drawLegend  = p.Results.DrawLegend;
-    oneSided    = p.Results.OneSided;    
-    plotSide    = p.Results.PlotSide;
-    yLims       = p.Results.YLims;
-    titleString = p.Results.Title;    
+    parent       = p.Results.Parent;    
+    nBins        = p.Results.nBins;
+    drawPoints   = p.Results.DrawPoints;
+    drawMean     = p.Results.DrawMean;
+    drawLegend   = p.Results.DrawLegend;
+    oneSided     = p.Results.OneSided;    
+    plotSide     = p.Results.PlotSide;
+    yLims        = p.Results.YLims;
+    titleString  = p.Results.Title;    
+    baseFontSize = p.Results.BaseFontSize;
     
     plotSide = validatestring(plotSide,{'Left','Right','Both'});
     if oneSided && ~strcmp(plotSide,'Both')
@@ -133,8 +141,8 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
         g.set_parent(parent);
     end
     if ~drawLegend
-        % g.set_layout_options('legend','false');
-        % g.no_legend('color');
+        g.set_layout_options('legend','false');
+        g.no_legend();
     end
     if ~isempty(titleString)
         g.set_title(titleString);
@@ -143,11 +151,17 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
         g.axe_property('YLim',yLims);
     end
     
-    g.set_color_options('map',cmap,'n_color',2,'n_lightness',1);
-    g.set_names('x','Stimulus (Diff/Sum)','y','Waiting Time (s)');
+    g.set_color_options('map',cmap,...
+        'n_color',2,...
+        'n_lightness',1);
+    g.set_names('x','Stimulus (Diff/Sum)',...
+        'y','Waiting Time (s)');
+    g.set_text_options('base_size', baseFontSize);
     
     if drawMean
-        g.stat_summary('bin_in',nBins,'geom',{'line','errorbar'},'type','sem');
+        g.stat_summary('bin_in',nBins,...
+            'geom',{'line','errorbar'},...
+            'type','sem');
         g.draw();
     end
     
