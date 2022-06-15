@@ -233,6 +233,10 @@ if optBin == true  % optimise using the shimazaki et al 2007 method
     sbin  = round((prev + post) / nbins);
 end
 
+% lock bins, so bin center is at 0
+post = (sbin * round(post / sbin));
+prev = (sbin * round(prev / sbin));
+
 [binnedSpikes, binCenters] = binSpikesPerEventMex(spikeTimes, eventTimes,...
     'Previous', prev,...
     'Post', post,...
@@ -307,6 +311,12 @@ if plotType >= 2
         'y', psthYAxisLabel,...
         'color',groupTitle);
     g(1,1).set_names('x','Time (ms)','y', psthYAxisLabel,'color',groupTitle);
+%     g(1,1).set_color_options('map', [175/256, 173/256, 235/256; 235/256, 173/256, 202/256],...
+%         'n_color', 2, 'n_lightness', 1);
+    g(1,1).set_layout_options('legend', isLeg,...
+        'margin_height', [0.2 0.1],...
+        'margin_width',  [0.1, 0.1],...
+        'redraw', false);
     if zeroLine
         g(1,1).geom_vline('xintercept',0,...
             'style','k:');
@@ -362,7 +372,7 @@ if ~isempty(parent)
     end
 end
 
-% actually draw
+% % actually draw
 g.draw();
 
 % if zeroLine
