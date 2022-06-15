@@ -46,7 +46,8 @@ defPrev               = []; % in ms
 defPost               = 1000; % in ms
 defSbin               = 100;  % in ms
 defHz                 = true;
-deftitle              = 'Visualising Spike Densities';
+defIsLeg              = true;
+deftitle              = '';
 defSubTitle           = {'PSTH','Raster'};
 defParent             = [];
 defPlotType           = 3;
@@ -98,6 +99,7 @@ addParameter(p, 'Previous', defPrev, valNumScalarNonEmpty);
 addParameter(p, 'Post', defPost, valNumScalarNonEmpty);
 addParameter(p, 'BinSize', defSbin, valNumScalarNonEmpty);
 addParameter(p, 'Hz', defHz, valBinaryScalar);
+addParameter(p, 'Legend', defIsLeg, valBinaryScalar);
 addParameter(p, 'Title', deftitle, valText);
 addParameter(p, 'SubTitles', defSubTitle, valTitleArray)
 addParameter(p, 'Parent', defParent, @ishandle);
@@ -123,30 +125,30 @@ addParameter(p, 'LegendTitleScaling', defLegendTitleScale, valNum);
 
 parse(p, varargin{:});
 
-spikeTimes         = p.Results.spikeTimes; 
-eventTimes         = p.Results.eventTimes(:,1);
-trialLimits        = p.Results.eventTimes(:,2);
-group              = p.Results.Group;
-prev               = p.Results.Previous;
-post               = p.Results.Post;
-sbin               = p.Results.BinSize;
-Hz                 = p.Results.Hz;
-figTitle           = p.Results.Title;
-subTitles          = p.Results.SubTitles;
-plotType           = p.Results.PlotType;
-parent             = p.Results.Parent;
-groupNames         = p.Results.GroupNames;
-ordering           = p.Results.Ordering;
-showError          = p.Results.ShowError;
-groupTitle         = p.Results.GroupTitle;
-zeroLine           = p.Results.ZeroLine;
-pointSize          = p.Results.PointSize;
-isZScore           = p.Results.ZScore;
-isPointRaster      = p.Results.PointRaster;
-sortRasterLimRange = p.Results.SortRasterLimRange;
-optBin             = p.Results.OptimiseBinSize;
-yLimits            = p.Results.YLimits;
-
+spikeTimes          = p.Results.spikeTimes; 
+eventTimes          = p.Results.eventTimes(:,1);
+trialLimits         = p.Results.eventTimes(:,2);
+group               = p.Results.Group;
+prev                = p.Results.Previous;
+post                = p.Results.Post;
+sbin                = p.Results.BinSize;
+Hz                  = p.Results.Hz;
+isLeg               = p.Results.Legend;
+figTitle            = p.Results.Title;
+subTitles           = p.Results.SubTitles;
+plotType            = p.Results.PlotType;
+parent              = p.Results.Parent;
+groupNames          = p.Results.GroupNames;
+ordering            = p.Results.Ordering;
+showError           = p.Results.ShowError;
+groupTitle          = p.Results.GroupTitle;
+zeroLine            = p.Results.ZeroLine;
+pointSize           = p.Results.PointSize;
+isZScore            = p.Results.ZScore;
+isPointRaster       = p.Results.PointRaster;
+sortRasterLimRange  = p.Results.SortRasterLimRange;
+optBin              = p.Results.OptimiseBinSize;
+yLimits             = p.Results.YLimits;
 fontSize            = p.Results.FontSize;
 titleFontSize       = p.Results.TitleFontSize;
 labelScaling        = p.Results.LabelScaling;
@@ -296,7 +298,7 @@ if plotType >= 2
                         'XLim',[-prev post]); 
     g(1,1).set_title(subTitles(1),...
         'FontSize', titleFontSize);
-    g(yIdx,1).set_text_options('base_size', fontSize,...
+    g(1,1).set_text_options('base_size', fontSize,...
         'label_scaling', labelScaling,...
         'legend_scaling', legendScaling,...
         'legend_title_scaling', legendTitleScaling);
@@ -339,12 +341,17 @@ if plotType == 1 || plotType == 3
         g(1,1).geom_vline('xintercept',0,'style','k:');
     end
     g(yIdx, 1).set_names('x','Time (ms)','y', 'Trials','color',groupTitle);
+    g(yIdx, 1).set_layout_options('legend', isLeg,...,
+       'margin_height', [0.2 0.1],...
+       'margin_width',  [0.1, 0.1],...
+       'redraw', false);
 end
 
 % Set title
-g.set_title(figTitle,...
-    'FontSize', titleFontSize);
-
+if exist(figTitle, 'var')
+    g.set_title(figTitle,...
+        'FontSize', titleFontSize);
+end
 
 % plot into parent panel/axes as needed
 if ~isempty(parent)
