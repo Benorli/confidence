@@ -32,8 +32,15 @@ function [g, sbin] = groupPsthTrialLimits(varargin)
 %   OptimiseBinSize    = Optimise binsize based on the shimazaki et al 2007 
 %                        method. Scalar logical, default false.
 %   YLimits            = Specifies Y limits, numeric, size [1 2].
-%   Kernel       = Use kernel density estimation approach for plotting histogram
-%                  (logical, default = false)
+%   Kernel             = Use kernel density estimation approach for  
+%                        plotting histogram (logical, default = false)
+%   AxesPropPSTH     = Feed axes properties to the PSTH. Name value pairs 
+%                      in cell array.
+%   AxesPropRast     = Feed axes properties to the Raster. Name value pairs
+%                      in cell array.
+%   ColorOptions     = Feed to gramm set_color_options. Name value pairs
+%                      in cell array.
+%
 %   Text Options
 %   fontSize, labelScaling, legendScaling,legendTitleScaling,titleFontSize
 
@@ -67,7 +74,11 @@ defFontSize           = 15;
 defTitleFontSize      = 16;
 defLabelScaling       = 1.33;
 defLegendScaling      = 0.8;
-defLegendTitleScale     = 1.2;
+defLegendTitleScale   = 1.2;
+defAxesPropPSTH       = {};
+defAxesPropRast       = {};
+defClrOptns           = {};
+
 
 % validation funs
 valNumColNonEmpty = @(x) validateattributes(x, {'numeric'},...
@@ -91,6 +102,7 @@ valGroupNames = @(x) validateattributes(x, {'char', 'string','cell'}, {'nonempty
 valOrdering = @(x) validateattributes(x, {'char', 'string','cell','numeric'}, {'nonempty'});
 valNumericRange = @(x) validateattributes(x, {'numeric'},...
     {'size', [1 2]});
+valCellArray = @(x) validateattributes(x, {'cell'}, {});
     
 addRequired(p, 'spikeTimes', valNumColNonEmpty);
 addRequired(p, 'eventTimes', valNum2ColNonEmpty);
@@ -121,7 +133,9 @@ addParameter(p, 'TitleFontSize', defTitleFontSize, valNum);
 addParameter(p, 'LabelScaling', defLabelScaling, valNum);
 addParameter(p, 'LegendScaling', defLegendScaling, valNum);
 addParameter(p, 'LegendTitleScaling', defLegendTitleScale, valNum);
-
+addParameter(p, 'AxesPropPSTH', defAxesPropPSTH, valCellArray);
+addParameter(p, 'AxesPropRast', defAxesPropRast, valCellArray);
+addParameter(p, 'ColorOptions', defClrOptns, valCellArray);
 
 parse(p, varargin{:});
 
@@ -154,6 +168,9 @@ titleFontSize       = p.Results.TitleFontSize;
 labelScaling        = p.Results.LabelScaling;
 legendScaling       = p.Results.LegendScaling;
 legendTitleScaling  = p.Results.LegendTitleScaling;
+axesPropPsth        = p.Results.AxesPropPSTH;
+axesPropRast        = p.Results.AxesPropRast;
+colorOpts           = p.Results.ColorOptions;
 
 clear p valNumColNonEmpty valNum2ColNonEmpty valNumScalarNonEmpty...
     valBinaryScalar valGroup valText valTitleArray valPlotType...
@@ -283,6 +300,7 @@ if isZScore
     end
 end
 
+% psth
 if plotType >= 2
     g(1,1) = gramm('x', binCenters',...
                    'y', binnedSpikes,...
@@ -300,7 +318,8 @@ if plotType >= 2
     end
     g(1,1).axe_property('YLim',[botYLim topYLim],... Don't allow negative values
                         'XLim',[-prev post],...
-                        'TickDir', 'out'); 
+                        'TickDir', 'out',...
+                        axesPropPsth{:}); 
     g(1,1).set_title(subTitles(1),...
         'FontSize', titleFontSize);
     g(1,1).set_text_options('base_size', fontSize,...
@@ -311,6 +330,7 @@ if plotType >= 2
         'y', psthYAxisLabel,...
         'color',groupTitle);
     g(1,1).set_names('x','Time (ms)','y', psthYAxisLabel,'color',groupTitle);
+    g(1,1).set_color_options(colorOpts{:});
 %     g(1,1).set_color_options('map', [175/256, 173/256, 235/256; 235/256, 173/256, 202/256],...
 %         'n_color', 2, 'n_lightness', 1);
     g(1,1).set_layout_options('legend', isLeg,...
@@ -323,6 +343,7 @@ if plotType >= 2
     end
 end
 
+% raster
 if plotType == 1 || plotType == 3
     g(yIdx, 1) = gramm('x', spikeTimesFromEvent', 'color', group);
     if setColour
@@ -344,7 +365,9 @@ if plotType == 1 || plotType == 3
         'y', 'Trials',...
         'color',groupTitle);
     g(yIdx,1).axe_property('XLim',[-prev post],...
-        'TickDir', 'out');
+        'TickDir', 'out',...
+        axesPropRast{:});
+    g(yIdx,1).set_color_options(colorOpts{:});
     if zeroLine
         g(yIdx,1).geom_vline('xintercept',0,...
             'style','k:');
