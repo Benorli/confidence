@@ -330,6 +330,7 @@ if plotType >= 2
         'y', psthYAxisLabel,...
         'color',groupTitle);
     g(1,1).set_names('x','Time (ms)','y', psthYAxisLabel,'color',groupTitle);
+    g(1,1).set_line_options('base_size', 2);
     g(1,1).set_color_options(colorOpts{:});
 %     g(1,1).set_color_options('map', [175/256, 173/256, 235/256; 235/256, 173/256, 202/256],...
 %         'n_color', 2, 'n_lightness', 1);
