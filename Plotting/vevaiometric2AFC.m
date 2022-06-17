@@ -1,4 +1,4 @@
-function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct, Catch, Rewarded, varargin)
+function [handle] = vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct, Catch, Rewarded, varargin)
 % Plot a psychometric curve for a 2 alternative forced choice (2AFC) task
 %
 %      SYNTAX
@@ -23,9 +23,6 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
 %       BaseFontSize   = base font size, scalar number
 %       AxesProperties = Name value cell array fed to axis properties.
 %       LineWidth      = Numeric scalar, sets gram base line width.
-
-
-%      % TO DO: 
 
 %% Parse variable input arguments
     
