@@ -16,7 +16,9 @@ function [handle] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
 %                (string/empty, default = 'Confidence')
 %       DrawFit    = Draw a binomial distribution fit to the data (logical)
 %       DrawTrials = Label the number of trials at each data point (logical)
-%       BaseFontSize = base font size, scalar number
+%       BaseFontSize   = base font size, scalar number
+%       AxesProperties = Name value cell array fed to axis properties.
+%       LineWidth      = Numeric scalar, sets gram base line width.
  
 
 
@@ -33,14 +35,17 @@ function [handle] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
     defDrawTrials    = true;
     defSDO           = [];
     defRDO           = [];
-    defBaseSize     = 16;
+    defBaseSize      = 16;
+    defLineWidth     = 2;
+    defAxProp        = {};
   
     % Validation functions
     %valNumNonEmpty = @(x) validateattributes(x, {'numeric'},{'nonempty'});
     valDropOuts    = @(x) validateattributes(x, {'numeric','logical'},...
-                                             {'nonempty'});
+        {'nonempty'});
     valNumScalar   = @(x) validateattributes(x, {'numeric'}, ...
-                       {'scalar'});
+        {'scalar'});
+    valCell   = @(x) validateattributes(x, {'cell'}, {});
 
     % add inputParser defaults and check var type
     addParameter(p, 'Title', defTitle, @(x) isstring(x));    
@@ -51,18 +56,22 @@ function [handle] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
     addParameter(p, 'SDO', defSDO, valDropOuts);
     addParameter(p, 'RDO', defRDO, valDropOuts);
     addParameter(p, 'BaseFontSize', defBaseSize, valNumScalar);
+    addParameter(p, 'LineWidth', defLineWidth, valNumScalar);
+    addParameter(p, 'AxesProperties', defAxProp, valCell);
     
     parse(p,varargin{:});
     
     nBins           = p.Results.nBins;
     titleString     = p.Results.Title;
     drawFit         = p.Results.DrawFit;
-    % drawMean        = p.Results.DrawMean;
+    % drawMean      = p.Results.DrawMean;
     drawTrials      = p.Results.DrawTrials;
     parent          = p.Results.Parent;
     sdo             = p.Results.SDO;
     rdo             = p.Results.RDO; 
     baseFontSize    = p.Results.BaseFontSize;
+    lineWidth       = p.Results.LineWidth;
+    axeProp         = p.Results.AxesProperties;
  
     %% Prepare Data
     
@@ -109,7 +118,8 @@ function [handle] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
     % set labels
     g.set_names('x','Evidence (difference/sum)','y','Proportion Right Choice');
     g.set_text_options('base_size', baseFontSize);
-    g.axe_property('TickDir', 'out');
+    g.axe_property('TickDir', 'out', axeProp{:});
+    g.set_line_options('base_size', lineWidth);
     g.draw();
         
     if drawTrials        

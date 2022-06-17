@@ -5,20 +5,24 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
 %      [handle] = Vevaiometric2AFC()
 %       
 %       OPTIONAL INPUTS
-%       Parent       = Handle to figure to plot in (handle)
-%       Title        = Title string, pass an empty string to leave blank 
-%                     (string/empty, default = 'Confidence')
-%       DrawLegend   = whether to draw Legend (logical)
-%       NBins        = # of bins to use (integer,default = 7, halved for 1 
-%                     side)
-%       DrawPoints   = draw individual data points (logical, default = true)
-%       DrawMean     = draw mean +- SEM (logical, default = true)
-%       OneSided     = plot absolute values for Evidence - ignores 
-%                     left/right distinction (logical, default = false)   
-%       PlotSide     = Draw data from specific side only, ('both','left' or
-%                      'right', default = 'both'
-%       YLims        = Set yLimits for plot (yLim vector, default = [] i.e. auto) 
-%       BaseFontSize = base font size, scalar number
+%       Parent         = Handle to figure to plot in (handle)
+%       Title          = Title string, pass an empty string to leave blank 
+%                        (string/empty, default = 'Confidence')
+%       DrawLegend     = whether to draw Legend (logical)
+%       NBins          = # of bins to use (integer,default = 7, halved for  
+%                        1 side)
+%       DrawPoints     = draw individual data points (logical, default = 
+%                        true)
+%       DrawMean       = draw mean +- SEM (logical, default = true)
+%       OneSided       = plot absolute values for Evidence - ignores 
+%                        left/right distinction (logical, default = false)   
+%       PlotSide       = Draw data from specific side only, ('both','left' 
+%                        or 'right', default = 'both'
+%       YLims          = Set yLimits for plot (yLim vector, default = 
+%                        [] i.e. auto) 
+%       BaseFontSize   = base font size, scalar number
+%       AxesProperties = Name value cell array fed to axis properties.
+%       LineWidth      = Numeric scalar, sets gram base line width.
 
 
 %      % TO DO: 
@@ -38,6 +42,8 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
     defTitle        = "Confidence";
     defYLims        = [];
     defBaseSize     = 16;
+    defAxesProp     = {};
+    defLineWidth    = 2;
 
     % Validation functions
     valPlotSide  = @(x) validateattributes(x, {'cell', 'string','char'},...
@@ -46,6 +52,7 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
                        {'nonempty','increasing','numel',2});
     valNumScalar = @(x) validateattributes(x, {'numeric'}, ...
                        {'scalar'});
+    valCell  = @(x) validateattributes(x, {'cell'}, {});
 
     
     % add inputParser defaults and check var type
@@ -59,6 +66,8 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
     addParameter(p, 'DrawLegend', defDrawLegend, @islogical);
     addParameter(p, 'YLims', defYLims, @isnumeric);
     addParameter(p, 'BaseFontSize', defBaseSize, valNumScalar);
+    addParameter(p, 'AxesProperties', defAxesProp, valCell);
+    addParameter(p, 'LineWidth', defLineWidth, valNumScalar);
         
     parse(p,varargin{:});
     
@@ -72,6 +81,8 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
     yLims        = p.Results.YLims;
     titleString  = p.Results.Title;    
     baseFontSize = p.Results.BaseFontSize;
+    axeProp      = p.Results.AxesProperties;
+    lineWidth    = p.Results.LineWidth;
     
     plotSide = validatestring(plotSide,{'Left','Right','Both'});
     if oneSided && ~strcmp(plotSide,'Both')
@@ -141,19 +152,19 @@ function [handle] = Vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
         g.set_parent(parent);
     end
     if ~drawLegend
-        g.set_layout_options('legend','false');
         g.no_legend();
     end
     if ~isempty(titleString)
         g.set_title(titleString);
     end  
     if ~isempty(yLims)
-        g.axe_property('YLim',yLims);
+        g.axe_property('YLim',yLims, axeProp{:});
     end
     
     g.set_color_options('map',cmap,...
         'n_color',2,...
         'n_lightness',1);
+    g(1,1).set_line_options('base_size', lineWidth);
     g.set_names('x','Stimulus (Diff/Sum)',...
         'y','Waiting Time (s)');
     g.set_text_options('base_size', baseFontSize);
