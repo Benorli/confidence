@@ -37,6 +37,7 @@ function [handle] = vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
     defPlotSide     = 'both';
     defDrawLegend   = true;
     defTitle        = "Confidence";
+    defYName        = "Waiting Time (s)";
     defYLims        = [];
     defBaseSize     = 16;
     defAxesProp     = {};
@@ -51,10 +52,10 @@ function [handle] = vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
                        {'scalar'});
     valCell  = @(x) validateattributes(x, {'cell'}, {});
 
-    
     % add inputParser defaults and check var type
     addParameter(p, 'Parent', defParent, @ishandle);    
-    addParameter(p, 'Title', defTitle, @(x) isstring(x));    
+    addParameter(p, 'Title', defTitle, @(x) isstring(x));   
+    addParameter(p, 'YName', defYName, @(x) isstring(x));
     addParameter(p, 'nBins', defNBins)
     addParameter(p, 'DrawPoints', defDrawPoints, @(x) islogical(x))
     addParameter(p, 'DrawMean', defDrawMean, @(x) islogical(x))
@@ -76,7 +77,8 @@ function [handle] = vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
     oneSided     = p.Results.OneSided;    
     plotSide     = p.Results.PlotSide;
     yLims        = p.Results.YLims;
-    titleString  = p.Results.Title;    
+    titleString  = p.Results.Title;  
+    yName        = p.Results.YName;
     baseFontSize = p.Results.BaseFontSize;
     axeProp      = p.Results.AxesProperties;
     lineWidth    = p.Results.LineWidth;
@@ -141,7 +143,7 @@ function [handle] = vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
             
     % First plot means and error for all correct vs. errors
     cData = cellstr(correctLabel);
-    cmap = pairedCmap([4 6],:);
+%     cmap = pairedCmap([4 6],:);
 
     g = gramm('x',xData,'y',yData,'color',cData,...
         'subset',subset & trialTypes ~= "Rewarded" & trialTypes ~= "Correct RDO");
@@ -158,13 +160,18 @@ function [handle] = vevaiometric2AFC(StimulusA, StimulusB, waitingTime, Correct,
         g.axe_property('YLim',yLims, axeProp{:});
     end
     
-    g.set_color_options('map',cmap,...
+%     g.set_color_options('map',cmap,...
+%         'n_color',2,...
+%         'n_lightness',1);
+    g.set_color_options('map',[134, 182, 142; 151, 34, 122] / 256,...
         'n_color',2,...
         'n_lightness',1);
     g(1,1).set_line_options('base_size', lineWidth);
-    g.set_names('x','Stimulus (Diff/Sum)',...
-        'y','Waiting Time (s)');
-    g.set_text_options('base_size', baseFontSize);
+    g.set_names('x','Binaural contrast $\Delta$N/N',...
+        'y', yName);
+    g.set_text_options('base_size', baseFontSize,...
+        'Interpreter', 'latex',...
+        'font', 'Helvetica');
     
     if drawMean
         g.stat_summary('bin_in',nBins,...

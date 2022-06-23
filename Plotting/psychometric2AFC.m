@@ -100,8 +100,9 @@ function [handle] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
     cmap = colourPicker('ylGnBu',9);
     g = gramm('x',stimulus,'y',choice);
     g.stat_summary('bin_in',nBins,...
+       'type', 'sem',...
        'geom',{'line','errorbar'});
-    g.set_color_options('map',cmap(5,:),'n_color',1,'n_lightness',1);
+    g.set_color_options('map',[0 0 0],'n_color',1,'n_lightness',1);
             
     if ~isempty(titleString)
         g.set_title(titleString);
@@ -116,8 +117,10 @@ function [handle] = psychometric2AFC(stimulusA, stimulusB, choice, varargin)
     % g.geom_vline('xintercept',0,'style','k:')
     
     % set labels
-    g.set_names('x','Evidence (difference/sum)','y','Proportion Right Choice');
-    g.set_text_options('base_size', baseFontSize);
+    g.set_names('x','Binaural contrast $\Delta$N/N','y','P(Choose right)');
+    g.set_text_options('base_size', baseFontSize,...
+                'Interpreter', 'latex',...
+                'font', 'Helvetica');
     g.axe_property('TickDir', 'out', axeProp{:});
     g.set_line_options('base_size', lineWidth);
     g.draw();
