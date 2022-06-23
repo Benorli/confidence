@@ -17,12 +17,14 @@ function [g, sbin] = groupPsthTrialLimits(varargin)
 %   Title        = String to use as figure title
 %   GroupNames   = Names to use for groups
 %   GroupTitle   = Label for group legend
+%   Legend       = true or false, show legend
 %   Parent       = handle to a figure or uipanel to plot into
 %   PlotType     = 1, 2 or 3 - will plot (1) rasters, (2) PSTH, 
 %                 (3=Default) both
 %   ShowError    = Show shaded error bars on PSTH's (logical, default = true)
 %   ZeroLine     = Show a vertical line at time 0 (logical, default = false)
 %   PointSize    = Scalar value, scales raster point size.
+%   LineWidth    = Numeric scalar, sets gram base line width.
 %   ZScore       = If using Z score, otherwise firing rate is used (logical,
 %                  default = false)
 %   PointRaster  = Scalar logical. Default true: raster elements are
@@ -70,6 +72,7 @@ defOrdering           = [];
 defShowError          = true;
 defZeroLine           = true;
 defPointSize          = 2;
+defLineWidth          = 2;
 defZScore             = false;
 defPointRaster        = true;
 defSortRasterLimRange = true;
@@ -128,6 +131,7 @@ addParameter(p, 'Ordering', defOrdering, valOrdering);
 addParameter(p, 'ShowError', defShowError, @(x) islogical(x));
 addParameter(p, 'ZeroLine', defZeroLine,@(x) islogical(x));
 addParameter(p, 'PointSize', defPointSize, valNumScalarNonEmpty);
+addParameter(p, 'LineWidth', defLineWidth, valNumScalarNonEmpty);
 addParameter(p, 'ZScore', defZScore, valBinaryScalar);
 addParameter(p, 'PointRaster', defPointRaster, valBinaryScalar);
 addParameter(p, 'SortRasterLimRange', defSortRasterLimRange,...
@@ -179,6 +183,7 @@ axesPropPsth        = p.Results.AxesPropPSTH;
 axesPropRast        = p.Results.AxesPropRast;
 colorOpts           = p.Results.ColorOptions;
 lightness           = p.Results.Lightness;
+lineWidth           = p.Results.LineWidth;
 
 clear p valNumColNonEmpty valNum2ColNonEmpty valNumScalarNonEmpty...
     valBinaryScalar valGroup valText valTitleArray valPlotType...
@@ -341,12 +346,14 @@ if plotType >= 2
     g(1,1).set_text_options('base_size', fontSize,...
         'label_scaling', labelScaling,...
         'legend_scaling', legendScaling,...
-        'legend_title_scaling', legendTitleScaling);
+        'legend_title_scaling', legendTitleScaling,...
+        'Interpreter', 'latex',...
+        'font', 'Helvetica');
     g(1,1).set_names('x','Time (ms)',...
         'y', psthYAxisLabel,...
         'color',groupTitle);
     g(1,1).set_names('x','Time (ms)','y', psthYAxisLabel,'color',groupTitle);
-    g(1,1).set_line_options('base_size', 2);
+    g(1,1).set_line_options('base_size', lineWidth);
     g(1,1).set_color_options(colorOpts{:});
 %     g(1,1).set_color_options('map', [175/256, 173/256, 235/256; 235/256, 173/256, 202/256],...
 %         'n_color', 2, 'n_lightness', 1);
@@ -384,7 +391,9 @@ if plotType == 1 || plotType == 3
     g(yIdx,1).set_text_options('base_size', fontSize,...
         'label_scaling', labelScaling,...
         'legend_scaling', legendScaling,...
-        'legend_title_scaling', legendTitleScaling);
+        'legend_title_scaling', legendTitleScaling,...
+        'Interpreter', 'latex',...
+        'font', 'Helvetica');
 
     g(yIdx, 1).set_names('x','Time (ms)',...
         'y', 'Trials',...
