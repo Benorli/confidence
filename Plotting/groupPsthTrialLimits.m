@@ -40,6 +40,11 @@ function [g, sbin] = groupPsthTrialLimits(varargin)
 %                      in cell array.
 %   ColorOptions     = Feed to gramm set_color_options. Name value pairs
 %                      in cell array.
+%   Lightness        = Include the gramm feature lightness or not. Groups 
+%                      are fed to both color and lightness gramm('color', 
+%                      group, 'lightness', group). If false only color is
+%                      used which allows for cmap(scalar logical, default 
+%                      = true)
 %
 %   Text Options
 %   fontSize, labelScaling, legendScaling,legendTitleScaling,titleFontSize
@@ -78,6 +83,7 @@ defLegendTitleScale   = 1.2;
 defAxesPropPSTH       = {};
 defAxesPropRast       = {};
 defClrOptns           = {};
+defLitOptns           = true;
 
 
 % validation funs
@@ -136,6 +142,7 @@ addParameter(p, 'LegendTitleScaling', defLegendTitleScale, valNum);
 addParameter(p, 'AxesPropPSTH', defAxesPropPSTH, valCellArray);
 addParameter(p, 'AxesPropRast', defAxesPropRast, valCellArray);
 addParameter(p, 'ColorOptions', defClrOptns, valCellArray);
+addParameter(p, 'Lightness', defLitOptns, valBinaryScalar);
 
 parse(p, varargin{:});
 
@@ -171,6 +178,7 @@ legendTitleScaling  = p.Results.LegendTitleScaling;
 axesPropPsth        = p.Results.AxesPropPSTH;
 axesPropRast        = p.Results.AxesPropRast;
 colorOpts           = p.Results.ColorOptions;
+lightness           = p.Results.Lightness;
 
 clear p valNumColNonEmpty valNum2ColNonEmpty valNumScalarNonEmpty...
     valBinaryScalar valGroup valText valTitleArray valPlotType...
@@ -302,9 +310,17 @@ end
 
 % psth
 if plotType >= 2
-    g(1,1) = gramm('x', binCenters',...
-                   'y', binnedSpikes,...
-                   'color', group);
+    switch lightness
+        case true
+            g(1,1) = gramm('x', binCenters',...
+                'y', binnedSpikes,...
+                'color', group,...
+                'lightness', group);
+        case false
+            g(1,1) = gramm('x', binCenters',...
+                'y', binnedSpikes,...
+                'color', group);
+    end
     if setColour
         g(1,1).set_color_options('map',[0 0 0],'n_color',1,'n_lightness',1);
     end
@@ -346,7 +362,15 @@ end
 
 % raster
 if plotType == 1 || plotType == 3
-    g(yIdx, 1) = gramm('x', spikeTimesFromEvent', 'color', group);
+    switch lightness
+        case true
+            g(yIdx, 1) = gramm('x', spikeTimesFromEvent',...
+                'color', group,...
+                'lightness', group);
+        case false
+            g(yIdx, 1) = gramm('x', spikeTimesFromEvent',...
+                'color', group);
+    end
     if setColour
         g(1,1).set_color_options('map',[0 0 0],'n_color',1,'n_lightness',1);
     end
