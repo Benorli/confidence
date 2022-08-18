@@ -106,7 +106,7 @@ end
 for i = occurringEvents    
     % If a bin count was provided use this to calculate the binWidth
     if ~isempty(binCount)
-        [counts, binCenters] = histdiff(spikeTimes, eventTimes(i),binCount);
+        [counts, binCenters] = histdiff(spikeTimes, eventTimes(i), binCount);
     else
         [counts, binCenters] = histdiff(spikeTimes, eventTimes(i),binEdges);
     end
@@ -127,7 +127,6 @@ for i = occurringEvents
     
 end
 
-
 % assert(sum(cell2mat(binnedSpikes)) ~= 0, ['No spikes found in any trials. '....
 %     'Please check 1) spike times vector is not empty, 2) You remembered'...
 %     ' to add the trial start time to the eventTimes 3) The'...
@@ -146,6 +145,5 @@ if cellWrap == true
     binnedSpikes = {binnedSpikes};
     binEdges     = {binEdges};
 end
-    
 
 end

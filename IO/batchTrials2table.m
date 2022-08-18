@@ -87,7 +87,7 @@ end
 T = rmmissing(T, 'DataVariables', 'date');
 
 T.Properties.CustomProperties.nTrials = sum(nTrialsPerSesh);
-T = addprop(T,{'nTrialsPerSession'}, {'table'});
+T = addprop(T, {'nTrialsPerSession'}, {'table'});
 T.Properties.CustomProperties.nTrialsPerSession = nTrialsPerSesh;
  
 varargout{1} = conversionFile;
