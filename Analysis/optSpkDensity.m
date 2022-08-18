@@ -1,5 +1,5 @@
 function [spkDensity, sigma, windowedSpks, binnedSpks, binCenters] =...
-    optSpkDensity(spks, events, post, prev, resolution, varargin)
+    optSpkDensity(spks, events, post, prev, binSize, resolution, varargin)
 % OPTSPKDENSITY return spike density, by convolution with a gassian kernel
 % which has a sigma defined by a sskernel (Shimazaki and Shinomoto et al
 % 2010)
@@ -10,19 +10,18 @@ function [spkDensity, sigma, windowedSpks, binnedSpks, binCenters] =...
 %   in a scalar representing the resolution of time used for smoothing.
 %   Optional logical input, determines if output is wrapped in cell.
 
-narginchk(5, 6);
+narginchk(6, 7);
 
 validateattributes(post, {'numeric'}, {'vector'});
 validateattributes(post, {'numeric'}, {'vector'});
 validateattributes(post, {'numeric'}, {'scalar'});
 validateattributes(prev, {'numeric'}, {'scalar'});
+validateattributes(binSize, {'numeric'}, {'scalar'});
 validateattributes(resolution, {'numeric'}, {'scalar'});
 if ~isempty(varargin)
     validateattributes(varargin{1}, {'logical', 'numeric'},...
         {'binary', 'scalar'});
 end
-
-binSize = round((post + prev) / resolution);
 
 windowedSpks = compareSpikes2EventsMex(spks, events,...
     'Post',        post,...
@@ -43,12 +42,13 @@ binnedSpks = reshape(cell2mat(binnedSpks), length(binCenters),...
     length(binnedSpks))';
 
 % define kernel
-normDist = normpdf(-4 * sigma : binSize : 4 * sigma, 0, sigma);
+resBinSize = round((post + prev) / resolution);
+normDist = normpdf(-4 * sigma : resBinSize : 4 * sigma, 0, sigma);
 
 % convolve
 % To get results in Hz, divide by binsize in seconds
-binSizeSecond = binSize / 1000;
-spkDensity = conv2(binnedSpks, normDist / binSizeSecond, 'same');
+resBinSizeSecond = resBinSize / 1000;
+spkDensity = conv2(binnedSpks, normDist / resBinSizeSecond, 'same');
 
 if ~isempty(varargin) && varargin{1} == true
     
